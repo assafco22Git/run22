@@ -72,27 +72,36 @@ export async function createWorkout(
   }
 
   try {
+    // Create workout first (no nested creates — Neon HTTP doesn't support transactions)
     const workout = await prisma.workout.create({
       data: {
         title,
         description: description ?? null,
-        scheduledAt: new Date(scheduledAt),
+        // Date-only strings (YYYY-MM-DD) are parsed as UTC midnight; pin to noon local
+        scheduledAt: new Date(scheduledAt.includes("T") ? scheduledAt : `${scheduledAt}T12:00:00`),
         status: "PENDING",
         trainerId: trainerProfile.id,
         traineeId,
-        segments: {
-          create: segments.map((seg, idx) => ({
-            order: idx,
-            distance: seg.distance,
-            pace: seg.pace,
-            remarks: seg.remarks ?? null,
-          })),
-        },
       },
     });
 
+    // Create segments one-by-one
+    for (let idx = 0; idx < segments.length; idx++) {
+      const seg = segments[idx]!;
+      await prisma.workoutSegment.create({
+        data: {
+          workoutId: workout.id,
+          order: idx,
+          distance: seg.distance,
+          pace: seg.pace,
+          remarks: seg.remarks ?? null,
+        },
+      });
+    }
+
     return { success: true, workoutId: workout.id };
-  } catch {
+  } catch (e) {
+    console.error("createWorkout error:", e);
     return { success: false, error: "Failed to create workout" };
   }
 }

@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import type { Role } from "@/types";
 
 export async function addTrainee(
@@ -89,4 +90,72 @@ export async function addTrainee(
   } catch {
     return { success: false, error: "Failed to add trainee. Please try again." };
   }
+}
+
+export async function removeTrainee(
+  traineeId: string
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  if ((session.user.role as Role) !== "TRAINER")
+    return { success: false, error: "Unauthorized" };
+
+  const trainerProfile = await prisma.trainerProfile.findUnique({
+    where: { userId: session.user.id },
+  });
+  if (!trainerProfile) return { success: false, error: "Trainer profile not found" };
+
+  const link = await prisma.trainerTrainee.findFirst({
+    where: { trainerId: trainerProfile.id, traineeId },
+  });
+  if (!link) return { success: false, error: "Trainee not linked to your account" };
+
+  await prisma.trainerTrainee.delete({ where: { id: link.id } });
+  revalidatePath("/trainer/trainees");
+  return { success: true };
+}
+
+export async function updateTraineeDetails(
+  traineeId: string,
+  data: { name: string; dob?: string; gender?: string }
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  if ((session.user.role as Role) !== "TRAINER")
+    return { success: false, error: "Unauthorized" };
+
+  const trainerProfile = await prisma.trainerProfile.findUnique({
+    where: { userId: session.user.id },
+  });
+  if (!trainerProfile) return { success: false, error: "Trainer profile not found" };
+
+  const link = await prisma.trainerTrainee.findFirst({
+    where: { trainerId: trainerProfile.id, traineeId },
+  });
+  if (!link) return { success: false, error: "Trainee not linked to your account" };
+
+  const traineeProfile = await prisma.traineeProfile.findUnique({
+    where: { id: traineeId },
+  });
+  if (!traineeProfile) return { success: false, error: "Trainee profile not found" };
+
+  const name = data.name.trim();
+  if (!name) return { success: false, error: "Name is required" };
+
+  await prisma.user.update({
+    where: { id: traineeProfile.userId },
+    data: { name },
+  });
+
+  await prisma.traineeProfile.update({
+    where: { id: traineeId },
+    data: {
+      dob: data.dob ? new Date(data.dob) : null,
+      gender: data.gender || null,
+    },
+  });
+
+  revalidatePath(`/trainer/trainees/${traineeId}`);
+  revalidatePath("/trainer/trainees");
+  return { success: true };
 }

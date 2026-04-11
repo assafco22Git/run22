@@ -7,6 +7,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ArrowLeft, Mail, Calendar, Dumbbell } from "lucide-react";
 import type { WorkoutStatus } from "@/types";
 import { TraineeAnalyticsChart } from "@/components/charts/TraineeAnalyticsChart";
+import { TraineeActions } from "@/components/trainer/TraineeActions";
+import { WorkoutCalendar } from "@/components/trainer/WorkoutCalendar";
 
 function statusBadge(status: string) {
   const s = status as WorkoutStatus;
@@ -119,6 +121,19 @@ export default async function TraineeDetailPage({ params }: PageProps) {
     (w) => w.status === "COMPLETED"
   ).length;
 
+  // Serialise workouts for the calendar (no Date objects across server→client boundary)
+  const calendarWorkouts = traineeProfile.workouts.map((w) => ({
+    id: w.id,
+    title: w.title,
+    scheduledAt: w.scheduledAt.toISOString(),
+    status: w.status,
+  }));
+
+  // Format dob for the edit form (YYYY-MM-DD)
+  const dobFormatted = traineeProfile.dob
+    ? traineeProfile.dob.toISOString().slice(0, 10)
+    : null;
+
   return (
     <div className="p-6 max-w-4xl mx-auto w-full">
       {/* Back */}
@@ -167,6 +182,21 @@ export default async function TraineeDetailPage({ params }: PageProps) {
             + Workout
           </Link>
         </div>
+
+        {/* Edit / Remove actions */}
+        <div className="mt-4">
+          <TraineeActions
+            traineeId={traineeId}
+            initialName={traineeProfile.user.name}
+            initialDob={dobFormatted}
+            initialGender={traineeProfile.gender}
+          />
+        </div>
+      </div>
+
+      {/* Workout Calendar */}
+      <div className="mb-6">
+        <WorkoutCalendar workouts={calendarWorkouts} />
       </div>
 
       {/* Tabs with chart */}

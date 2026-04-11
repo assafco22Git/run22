@@ -379,7 +379,7 @@ export default function NewWorkoutPage() {
               <FieldLabel htmlFor="scheduledAt">Scheduled Date *</FieldLabel>
               <Input
                 id="scheduledAt"
-                type="datetime-local"
+                type="date"
                 required
                 value={scheduledAt}
                 onChange={(e) => setScheduledAt(e.target.value)}

@@ -1,79 +1,59 @@
 import { requireTrainer } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { BioForm } from "@/components/trainer/BioForm";
-import { User, Mail, FileText } from "lucide-react";
+import { updateName } from "@/app/actions/profile";
 
 export default async function TrainerSettingsPage() {
   const session = await requireTrainer();
-  const userId = session.user.id;
 
-  // Fetch trainer profile (bio)
-  const trainerProfile = await prisma.trainerProfile.findUnique({
-    where: { userId },
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true },
   });
 
-  const bio = trainerProfile?.bio ?? "";
-  const name = session.user.name ?? "Trainer";
-  const email = session.user.email ?? "";
+  const trainerProfile = await prisma.trainerProfile.findUnique({
+    where: { userId: session.user.id },
+  });
 
   return (
     <div className="p-6 max-w-2xl mx-auto w-full">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Settings
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Manage your trainer profile
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your trainer profile</p>
       </div>
 
-      {/* Profile card — read-only */}
+      {/* Profile — editable */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 mb-5">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
-          Account
-        </h2>
-
-        <div className="space-y-4">
-          {/* Name */}
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Account</h2>
+        <form action={updateName} className="space-y-4">
           <div>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              <User className="w-3.5 h-3.5" />
-              Name
-            </label>
-            <div className="px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 select-all">
-              {name}
+            <label htmlFor="name" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Name</label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              defaultValue={user?.name ?? ""}
+              required
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Email</label>
+            <div className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-500 dark:text-gray-400">
+              {user?.email}
             </div>
           </div>
-
-          {/* Email */}
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              <Mail className="w-3.5 h-3.5" />
-              Email
-            </label>
-            <div className="px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 select-all">
-              {email}
-            </div>
-            <p className="text-xs text-gray-400 dark:text-gray-600 mt-1">
-              Name and email cannot be changed here.
-            </p>
-          </div>
-        </div>
+          <button type="submit" className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors">
+            Save changes
+          </button>
+        </form>
       </div>
 
-      {/* Bio card — editable */}
+      {/* Bio — editable */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-        <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            Bio
-          </h2>
-          <FileText className="w-4 h-4 text-gray-400 dark:text-gray-600" />
-        </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Your bio is visible to your trainees.
-        </p>
-
-        <BioForm initialBio={bio} />
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">Bio</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Visible to your trainees.</p>
+        <BioForm initialBio={trainerProfile?.bio ?? ""} />
       </div>
     </div>
   );
