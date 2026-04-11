@@ -11,186 +11,147 @@ const adapter = new PrismaNeonHttp(connectionString, {
 });
 const prisma = new PrismaClient({ adapter });
 
+// Helper: find or create without upsert (no transactions needed)
+async function findOrCreate<T>(
+  findFn: () => Promise<T | null>,
+  createFn: () => Promise<T>
+): Promise<T> {
+  const existing = await findFn();
+  if (existing) return existing;
+  return createFn();
+}
+
 async function main() {
   console.log("Seeding database...");
 
-  // Hash passwords
   const trainerPassword = await bcrypt.hash("trainer123", 10);
   const traineePassword = await bcrypt.hash("trainee123", 10);
 
-  // Create trainer
-  const trainer = await prisma.user.upsert({
-    where: { email: "trainer@app.com" },
-    update: {},
-    create: {
-      email: "trainer@app.com",
-      passwordHash: trainerPassword,
-      name: "Coach Assaf",
-      role: "TRAINER",
-    },
-  });
-  console.log("Created trainer:", trainer.email);
+  // ── Users ──────────────────────────────────────────────────────────────────
 
-  // Create trainee alice
-  const alice = await prisma.user.upsert({
-    where: { email: "alice@app.com" },
-    update: {},
-    create: {
-      email: "alice@app.com",
-      passwordHash: traineePassword,
-      name: "Alice Cohen",
-      role: "TRAINEE",
-    },
-  });
-  console.log("Created trainee:", alice.email);
+  const trainer = await findOrCreate(
+    () => prisma.user.findUnique({ where: { email: "trainer@app.com" } }),
+    () => prisma.user.create({
+      data: { email: "trainer@app.com", passwordHash: trainerPassword, name: "Coach Assaf", role: "TRAINER" },
+    })
+  );
+  console.log("Trainer:", trainer.email);
 
-  // Create trainee bob
-  const bob = await prisma.user.upsert({
-    where: { email: "bob@app.com" },
-    update: {},
-    create: {
-      email: "bob@app.com",
-      passwordHash: traineePassword,
-      name: "Bob Levi",
-      role: "TRAINEE",
-    },
-  });
-  console.log("Created trainee:", bob.email);
+  const alice = await findOrCreate(
+    () => prisma.user.findUnique({ where: { email: "alice@app.com" } }),
+    () => prisma.user.create({
+      data: { email: "alice@app.com", passwordHash: traineePassword, name: "Alice Cohen", role: "TRAINEE" },
+    })
+  );
+  console.log("Trainee:", alice.email);
 
-  // Create TrainerProfile
-  const trainerProfile = await prisma.trainerProfile.upsert({
-    where: { userId: trainer.id },
-    update: {},
-    create: {
-      userId: trainer.id,
-      bio: "Experienced running coach with 10+ years of competitive racing.",
-    },
-  });
-  console.log("Created trainer profile");
+  const bob = await findOrCreate(
+    () => prisma.user.findUnique({ where: { email: "bob@app.com" } }),
+    () => prisma.user.create({
+      data: { email: "bob@app.com", passwordHash: traineePassword, name: "Bob Levi", role: "TRAINEE" },
+    })
+  );
+  console.log("Trainee:", bob.email);
 
-  // Create TraineeProfiles
-  const aliceProfile = await prisma.traineeProfile.upsert({
-    where: { userId: alice.id },
-    update: {},
-    create: {
-      userId: alice.id,
-      gender: "female",
-    },
-  });
-  console.log("Created Alice profile");
+  // ── Profiles ───────────────────────────────────────────────────────────────
 
-  const bobProfile = await prisma.traineeProfile.upsert({
-    where: { userId: bob.id },
-    update: {},
-    create: {
-      userId: bob.id,
-      gender: "male",
-    },
-  });
-  console.log("Created Bob profile");
+  const trainerProfile = await findOrCreate(
+    () => prisma.trainerProfile.findUnique({ where: { userId: trainer.id } }),
+    () => prisma.trainerProfile.create({
+      data: { userId: trainer.id, bio: "Experienced running coach with 10+ years of competitive racing." },
+    })
+  );
 
-  // Link alice and bob to the trainer
-  await prisma.trainerTrainee.upsert({
-    where: {
-      trainerId_traineeId: {
+  const aliceProfile = await findOrCreate(
+    () => prisma.traineeProfile.findUnique({ where: { userId: alice.id } }),
+    () => prisma.traineeProfile.create({ data: { userId: alice.id, gender: "female" } })
+  );
+
+  const bobProfile = await findOrCreate(
+    () => prisma.traineeProfile.findUnique({ where: { userId: bob.id } }),
+    () => prisma.traineeProfile.create({ data: { userId: bob.id, gender: "male" } })
+  );
+
+  console.log("Profiles created");
+
+  // ── Links ──────────────────────────────────────────────────────────────────
+
+  await findOrCreate(
+    () => prisma.trainerTrainee.findFirst({ where: { trainerId: trainerProfile.id, traineeId: aliceProfile.id } }),
+    () => prisma.trainerTrainee.create({ data: { trainerId: trainerProfile.id, traineeId: aliceProfile.id } })
+  );
+
+  await findOrCreate(
+    () => prisma.trainerTrainee.findFirst({ where: { trainerId: trainerProfile.id, traineeId: bobProfile.id } }),
+    () => prisma.trainerTrainee.create({ data: { trainerId: trainerProfile.id, traineeId: bobProfile.id } })
+  );
+
+  console.log("Trainer-trainee links created");
+
+  // ── Workouts (only if none exist for alice) ────────────────────────────────
+
+  const existingWorkouts = await prisma.workout.count({ where: { traineeId: aliceProfile.id } });
+  if (existingWorkouts === 0) {
+    const now = new Date();
+
+    // Workout 1 — past, completed
+    const w1 = await prisma.workout.create({
+      data: {
+        title: "Easy Recovery Run",
+        description: "Gentle aerobic run to aid recovery. Keep heart rate low.",
+        scheduledAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+        status: "COMPLETED",
         trainerId: trainerProfile.id,
         traineeId: aliceProfile.id,
       },
-    },
-    update: {},
-    create: {
-      trainerId: trainerProfile.id,
-      traineeId: aliceProfile.id,
-    },
-  });
-  console.log("Linked Alice to trainer");
+    });
+    for (const seg of [
+      { order: 1, distance: 2.0, pace: "6:30", remarks: "Warm up" },
+      { order: 2, distance: 5.0, pace: "6:00", remarks: "Easy pace" },
+      { order: 3, distance: 1.0, pace: "6:30", remarks: "Cool down" },
+    ]) { await prisma.workoutSegment.create({ data: { workoutId: w1.id, ...seg } }); }
+    console.log("Created workout 1:", w1.title);
 
-  await prisma.trainerTrainee.upsert({
-    where: {
-      trainerId_traineeId: {
+    // Workout 2 — past, completed
+    const w2 = await prisma.workout.create({
+      data: {
+        title: "Tempo Run",
+        description: "Sustained effort at comfortably hard pace.",
+        scheduledAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+        status: "COMPLETED",
         trainerId: trainerProfile.id,
-        traineeId: bobProfile.id,
+        traineeId: aliceProfile.id,
       },
-    },
-    update: {},
-    create: {
-      trainerId: trainerProfile.id,
-      traineeId: bobProfile.id,
-    },
-  });
-  console.log("Linked Bob to trainer");
+    });
+    for (const seg of [
+      { order: 1, distance: 2.0, pace: "6:00", remarks: "Warm up" },
+      { order: 2, distance: 1.0, pace: "4:45", remarks: "Tempo rep 1" },
+      { order: 3, distance: 0.5, pace: "6:30", remarks: "Recovery" },
+      { order: 4, distance: 1.0, pace: "4:45", remarks: "Tempo rep 2" },
+      { order: 5, distance: 2.0, pace: "6:00", remarks: "Cool down" },
+    ]) { await prisma.workoutSegment.create({ data: { workoutId: w2.id, ...seg } }); }
+    console.log("Created workout 2:", w2.title);
 
-  // Create 3 sample workouts for Alice
-  const now = new Date();
-
-  const workout1 = await prisma.workout.create({
-    data: {
-      title: "Easy Recovery Run",
-      description: "Gentle aerobic run to aid recovery. Keep heart rate low.",
-      scheduledAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
-      status: "COMPLETED",
-      trainerId: trainerProfile.id,
-      traineeId: aliceProfile.id,
-      segments: {
-        create: [
-          { order: 1, distance: 2.0, pace: "6:30", remarks: "Warm up" },
-          { order: 2, distance: 5.0, pace: "6:00", remarks: "Easy pace" },
-          { order: 3, distance: 1.0, pace: "6:30", remarks: "Cool down" },
-        ],
+    // Workout 3 — upcoming
+    const w3 = await prisma.workout.create({
+      data: {
+        title: "Long Run",
+        description: "Weekend long run at easy conversational pace.",
+        scheduledAt: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
+        status: "PENDING",
+        trainerId: trainerProfile.id,
+        traineeId: aliceProfile.id,
       },
-    },
-  });
-  console.log("Created workout 1:", workout1.title);
-
-  const workout2 = await prisma.workout.create({
-    data: {
-      title: "Tempo Run",
-      description:
-        "Sustained effort at comfortably hard pace. 4 x 1km at threshold.",
-      scheduledAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      status: "COMPLETED",
-      trainerId: trainerProfile.id,
-      traineeId: aliceProfile.id,
-      segments: {
-        create: [
-          { order: 1, distance: 2.0, pace: "6:00", remarks: "Warm up" },
-          { order: 2, distance: 1.0, pace: "4:45", remarks: "Tempo rep 1" },
-          { order: 3, distance: 0.5, pace: "6:30", remarks: "Recovery" },
-          { order: 4, distance: 1.0, pace: "4:45", remarks: "Tempo rep 2" },
-          { order: 5, distance: 0.5, pace: "6:30", remarks: "Recovery" },
-          { order: 6, distance: 1.0, pace: "4:45", remarks: "Tempo rep 3" },
-          { order: 7, distance: 0.5, pace: "6:30", remarks: "Recovery" },
-          { order: 8, distance: 1.0, pace: "4:45", remarks: "Tempo rep 4" },
-          { order: 9, distance: 2.0, pace: "6:00", remarks: "Cool down" },
-        ],
-      },
-    },
-  });
-  console.log("Created workout 2:", workout2.title);
-
-  const workout3 = await prisma.workout.create({
-    data: {
-      title: "Long Run",
-      description: "Weekend long run at easy conversational pace.",
-      scheduledAt: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-      status: "PENDING",
-      trainerId: trainerProfile.id,
-      traineeId: aliceProfile.id,
-      segments: {
-        create: [
-          { order: 1, distance: 2.0, pace: "6:20", remarks: "Warm up" },
-          {
-            order: 2,
-            distance: 14.0,
-            pace: "5:55",
-            remarks: "Long run main set",
-          },
-          { order: 3, distance: 2.0, pace: "6:20", remarks: "Cool down" },
-        ],
-      },
-    },
-  });
-  console.log("Created workout 3:", workout3.title);
+    });
+    for (const seg of [
+      { order: 1, distance: 2.0, pace: "6:20", remarks: "Warm up" },
+      { order: 2, distance: 14.0, pace: "5:55", remarks: "Long run main set" },
+      { order: 3, distance: 2.0, pace: "6:20", remarks: "Cool down" },
+    ]) { await prisma.workoutSegment.create({ data: { workoutId: w3.id, ...seg } }); }
+    console.log("Created workout 3:", w3.title);
+  } else {
+    console.log("Workouts already exist, skipping");
+  }
 
   console.log("\nSeeding complete!");
   console.log("Trainer:  trainer@app.com / trainer123");
@@ -199,9 +160,7 @@ async function main() {
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
+  .then(() => prisma.$disconnect())
   .catch(async (e) => {
     console.error(e);
     await prisma.$disconnect();
