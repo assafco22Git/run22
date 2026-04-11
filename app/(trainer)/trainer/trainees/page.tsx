@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireTrainer } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
-import { ChevronRight, User } from "lucide-react";
+import { ChevronRight, User, UserPlus } from "lucide-react";
 
 export default async function TraineesPage() {
   const session = await requireTrainer();
@@ -32,14 +32,23 @@ export default async function TraineesPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto w-full">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Trainees
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          {trainees.length} trainee{trainees.length !== 1 ? "s" : ""} linked to
-          your account
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Trainees
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            {trainees.length} trainee{trainees.length !== 1 ? "s" : ""} linked to
+            your account
+          </p>
+        </div>
+        <Link
+          href="/trainer/trainees/new"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors shadow-sm"
+        >
+          <UserPlus className="w-4 h-4" />
+          Add trainee
+        </Link>
       </div>
 
       {trainees.length === 0 ? (

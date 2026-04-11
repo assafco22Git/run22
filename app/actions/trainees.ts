@@ -4,7 +4,20 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
 import type { Role } from "@/types";
+
+// ─── Helper: verify caller is a trainer and return their profile ─────────────
+
+async function requireTrainerProfile() {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  if ((session.user.role as Role) !== "TRAINER") return null;
+
+  return prisma.trainerProfile.findUnique({ where: { userId: session.user.id } });
+}
+
+// ─── Link an existing trainee account ───────────────────────────────────────
 
 export async function addTrainee(
   email: string
@@ -92,18 +105,58 @@ export async function addTrainee(
   }
 }
 
+// ─── Create a brand-new trainee account and link it ─────────────────────────
+
+export async function createTrainee(data: {
+  name: string;
+  email: string;
+  password: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const trainerProfile = await requireTrainerProfile();
+  if (!trainerProfile) return { success: false, error: "Unauthorized" };
+
+  const name = data.name.trim();
+  const email = data.email.trim().toLowerCase();
+  const password = data.password;
+
+  if (!name) return { success: false, error: "Name is required" };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return { success: false, error: "Invalid email address" };
+  if (password.length < 6)
+    return { success: false, error: "Password must be at least 6 characters" };
+
+  // Check email not already in use
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return { success: false, error: "An account with that email already exists" };
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  // Create user
+  const user = await prisma.user.create({
+    data: { name, email, passwordHash, role: "TRAINEE" },
+  });
+
+  // Create trainee profile
+  const traineeProfile = await prisma.traineeProfile.create({
+    data: { userId: user.id },
+  });
+
+  // Link to trainer
+  await prisma.trainerTrainee.create({
+    data: { trainerId: trainerProfile.id, traineeId: traineeProfile.id },
+  });
+
+  revalidatePath("/trainer/trainees");
+  return { success: true };
+}
+
+// ─── Remove trainee link ─────────────────────────────────────────────────────
+
 export async function removeTrainee(
   traineeId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  if ((session.user.role as Role) !== "TRAINER")
-    return { success: false, error: "Unauthorized" };
-
-  const trainerProfile = await prisma.trainerProfile.findUnique({
-    where: { userId: session.user.id },
-  });
-  if (!trainerProfile) return { success: false, error: "Trainer profile not found" };
+  const trainerProfile = await requireTrainerProfile();
+  if (!trainerProfile) return { success: false, error: "Unauthorized" };
 
   const link = await prisma.trainerTrainee.findFirst({
     where: { trainerId: trainerProfile.id, traineeId },
@@ -115,19 +168,20 @@ export async function removeTrainee(
   return { success: true };
 }
 
+// ─── Update trainee profile details (name, dob, gender, email, password) ────
+
 export async function updateTraineeDetails(
   traineeId: string,
-  data: { name: string; dob?: string; gender?: string }
+  data: {
+    name: string;
+    dob?: string;
+    gender?: string;
+    email?: string;
+    newPassword?: string;
+  }
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  if ((session.user.role as Role) !== "TRAINER")
-    return { success: false, error: "Unauthorized" };
-
-  const trainerProfile = await prisma.trainerProfile.findUnique({
-    where: { userId: session.user.id },
-  });
-  if (!trainerProfile) return { success: false, error: "Trainer profile not found" };
+  const trainerProfile = await requireTrainerProfile();
+  if (!trainerProfile) return { success: false, error: "Unauthorized" };
 
   const link = await prisma.trainerTrainee.findFirst({
     where: { trainerId: trainerProfile.id, traineeId },
@@ -142,9 +196,30 @@ export async function updateTraineeDetails(
   const name = data.name.trim();
   if (!name) return { success: false, error: "Name is required" };
 
+  // Validate new email if provided
+  if (data.email) {
+    const newEmail = data.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail))
+      return { success: false, error: "Invalid email address" };
+
+    // Check not taken by another user
+    const conflict = await prisma.user.findUnique({ where: { email: newEmail } });
+    if (conflict && conflict.id !== traineeProfile.userId)
+      return { success: false, error: "That email is already in use" };
+  }
+
+  // Validate new password if provided
+  if (data.newPassword && data.newPassword.length < 6)
+    return { success: false, error: "Password must be at least 6 characters" };
+
+  // Build user update payload
+  const userUpdate: { name: string; email?: string; passwordHash?: string } = { name };
+  if (data.email) userUpdate.email = data.email.trim().toLowerCase();
+  if (data.newPassword) userUpdate.passwordHash = await bcrypt.hash(data.newPassword, 12);
+
   await prisma.user.update({
     where: { id: traineeProfile.userId },
-    data: { name },
+    data: userUpdate,
   });
 
   await prisma.traineeProfile.update({

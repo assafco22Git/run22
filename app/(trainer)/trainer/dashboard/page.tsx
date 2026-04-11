@@ -3,6 +3,7 @@ import { requireTrainer } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { Users, Dumbbell, CheckCircle, Plus, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DashboardCalendar } from "@/components/trainer/DashboardCalendar";
 
 function StatCard({
   label,
@@ -76,6 +77,23 @@ export default async function TrainerDashboardPage() {
     take: 5,
   });
 
+  // All workouts for the calendar (no date filter — client navigates months)
+  const allWorkouts = await prisma.workout.findMany({
+    where: { trainerId: trainerProfile?.id ?? "" },
+    include: { trainee: { include: { user: true } } },
+    orderBy: { scheduledAt: "asc" },
+  });
+
+  // Serialise for client component
+  const calendarWorkouts = allWorkouts.map(w => ({
+    id: w.id,
+    title: w.title,
+    scheduledAt: w.scheduledAt.toISOString(),
+    status: w.status,
+    traineeName: w.trainee.user.name,
+    traineeId: w.traineeId,
+  }));
+
   return (
     <div className="p-6 max-w-5xl mx-auto w-full">
       {/* Header */}
@@ -108,6 +126,11 @@ export default async function TrainerDashboardPage() {
           icon={CheckCircle}
           accent="bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400"
         />
+      </div>
+
+      {/* Calendar */}
+      <div className="mb-8">
+        <DashboardCalendar workouts={calendarWorkouts} />
       </div>
 
       {/* Quick actions */}

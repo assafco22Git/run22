@@ -188,6 +188,7 @@ export default async function TraineeDetailPage({ params }: PageProps) {
           <TraineeActions
             traineeId={traineeId}
             initialName={traineeProfile.user.name}
+            initialEmail={traineeProfile.user.email}
             initialDob={dobFormatted}
             initialGender={traineeProfile.gender}
           />

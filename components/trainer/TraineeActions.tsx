@@ -3,43 +3,77 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2, X, Check, Loader2 } from "lucide-react";
+import { Pencil, Trash2, X, Check, Loader2, Eye, EyeOff } from "lucide-react";
 import { removeTrainee, updateTraineeDetails } from "@/app/actions/trainees";
 
 interface TraineeActionsProps {
   traineeId: string;
   initialName: string;
-  initialDob?: string | null;   // ISO date string "YYYY-MM-DD" or null
+  initialEmail: string;
+  initialDob?: string | null;   // "YYYY-MM-DD"
   initialGender?: string | null;
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+      {children}
+    </span>
+  );
+}
+
+function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition placeholder-gray-400 dark:placeholder-gray-500"
+    />
+  );
 }
 
 export function TraineeActions({
   traineeId,
   initialName,
+  initialEmail,
   initialDob,
   initialGender,
 }: TraineeActionsProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+
+  // Form state
   const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail);
   const [dob, setDob] = useState(initialDob ?? "");
   const [gender, setGender] = useState(initialGender ?? "");
+  const [newPassword, setNewPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
   const [isPending, startTransition] = useTransition();
 
+  function resetForm() {
+    setName(initialName);
+    setEmail(initialEmail);
+    setDob(initialDob ?? "");
+    setGender(initialGender ?? "");
+    setNewPassword("");
+    setShowPw(false);
+  }
+
   function handleSave() {
-    if (!name.trim()) {
-      toast.error("Name is required");
-      return;
-    }
+    if (!name.trim()) { toast.error("Name is required"); return; }
     startTransition(async () => {
       const result = await updateTraineeDetails(traineeId, {
         name: name.trim(),
+        email: email.trim() || undefined,
         dob: dob || undefined,
         gender: gender || undefined,
+        newPassword: newPassword || undefined,
       });
       if (result.success) {
         toast.success("Trainee updated");
         setEditing(false);
+        setNewPassword("");
         router.refresh();
       } else {
         toast.error(result.error ?? "Failed to update");
@@ -48,13 +82,7 @@ export function TraineeActions({
   }
 
   function handleRemove() {
-    if (
-      !window.confirm(
-        "Remove this trainee from your roster? Their account and workouts are not deleted."
-      )
-    )
-      return;
-
+    if (!window.confirm("Remove this trainee from your roster? Their account and workouts are not deleted.")) return;
     startTransition(async () => {
       const result = await removeTrainee(traineeId);
       if (result.success) {
@@ -81,11 +109,7 @@ export function TraineeActions({
           disabled={isPending}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
         >
-          {isPending ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : (
-            <Trash2 className="w-3 h-3" />
-          )}
+          {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
           Remove
         </button>
       </div>
@@ -93,40 +117,26 @@ export function TraineeActions({
   }
 
   return (
-    <div className="mt-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 border border-gray-200 dark:border-gray-700 space-y-3">
+    <div className="mt-2 bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 border border-gray-200 dark:border-gray-700 space-y-3">
       <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
         Edit Trainee
       </p>
-      <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-          Name *
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-            Date of Birth
-          </label>
-          <input
-            type="date"
-            value={dob}
-            onChange={(e) => setDob(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-          />
+
+      {/* Profile info */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="sm:col-span-2">
+          <FieldLabel>Full name *</FieldLabel>
+          <TextInput type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Jane Smith" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-            Gender
-          </label>
+          <FieldLabel>Date of birth</FieldLabel>
+          <TextInput type="date" value={dob} onChange={e => setDob(e.target.value)} />
+        </div>
+        <div>
+          <FieldLabel>Gender</FieldLabel>
           <select
             value={gender}
-            onChange={(e) => setGender(e.target.value)}
+            onChange={e => setGender(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
           >
             <option value="">Not specified</option>
@@ -136,26 +146,55 @@ export function TraineeActions({
           </select>
         </div>
       </div>
+
+      {/* Credentials */}
+      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-3">
+        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+          Login credentials
+        </p>
+        <div>
+          <FieldLabel>Email address</FieldLabel>
+          <TextInput
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="jane@example.com"
+          />
+        </div>
+        <div>
+          <FieldLabel>New password (leave blank to keep unchanged)</FieldLabel>
+          <div className="relative">
+            <TextInput
+              type={showPw ? "text" : "password"}
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="Min. 6 characters"
+              minLength={6}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(v => !v)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              tabIndex={-1}
+            >
+              {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={handleSave}
           disabled={isPending}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-colors disabled:opacity-50"
         >
-          {isPending ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : (
-            <Check className="w-3 h-3" />
-          )}
+          {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
           Save
         </button>
         <button
-          onClick={() => {
-            setEditing(false);
-            setName(initialName);
-            setDob(initialDob ?? "");
-            setGender(initialGender ?? "");
-          }}
+          onClick={() => { setEditing(false); resetForm(); }}
           disabled={isPending}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
         >
