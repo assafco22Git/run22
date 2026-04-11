@@ -2,20 +2,30 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { Activity } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
-// Server Action for login
+// Server Action for login — validates credentials, determines role, redirects directly
 async function loginAction(formData: FormData) {
   "use server";
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
+  // Look up role before signIn so we can redirect to the right dashboard directly
+  let redirectTo = "/calendar";
   try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirectTo: "/",
-    });
+    const user = await prisma.user.findUnique({ where: { email }, select: { role: true, passwordHash: true } });
+    if (user?.passwordHash && await bcrypt.compare(password, user.passwordHash)) {
+      redirectTo = user.role === "TRAINER" ? "/trainer/dashboard" : "/calendar";
+    }
+  } catch {
+    // If DB lookup fails, fall back to "/" — the root page will handle the redirect
+    redirectTo = "/";
+  }
+
+  try {
+    await signIn("credentials", { email, password, redirectTo });
   } catch (error) {
     if (error instanceof AuthError) {
       return redirect(`/login?error=${encodeURIComponent("Invalid email or password")}`);
