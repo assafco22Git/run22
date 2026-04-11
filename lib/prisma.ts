@@ -2,10 +2,7 @@ import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaNeonHttp } from "@prisma/adapter-neon";
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL environment variable is not set.");
-  }
+  const connectionString = process.env.DATABASE_URL ?? "";
   const adapter = new PrismaNeonHttp(connectionString, {
     arrayMode: false,
     fullResults: false,
