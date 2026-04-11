@@ -29,6 +29,9 @@ const STATUS_LABEL: Record<WorkoutSummary["status"], string> = {
   SKIPPED: "Skipped",
 };
 
+// Sunday first
+const DAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 export function WorkoutCalendar({
   workouts,
   currentMonth,
@@ -36,13 +39,14 @@ export function WorkoutCalendar({
   const router = useRouter();
 
   const [year, mon] = currentMonth.split("-").map(Number);
-  const safeYear = year ?? new Date().getFullYear();
+  const safeYear  = year ?? new Date().getFullYear();
   const safeMonth = (mon ?? new Date().getMonth() + 1) - 1; // 0-indexed
 
   const firstDayOfMonth = new Date(safeYear, safeMonth, 1);
-  const daysInMonth = new Date(safeYear, safeMonth + 1, 0).getDate();
-  // 0=Sun, 1=Mon ... adjust to Mon-start (0=Mon)
-  const startDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
+  const daysInMonth     = new Date(safeYear, safeMonth + 1, 0).getDate();
+
+  // Sunday = 0 already, so no offset needed
+  const startDayOfWeek = firstDayOfMonth.getDay(); // 0=Sun
 
   const monthName = firstDayOfMonth.toLocaleString("en-US", {
     month: "long",
@@ -53,7 +57,7 @@ export function WorkoutCalendar({
   const workoutsByDay: Record<number, WorkoutSummary[]> = {};
   for (const w of workouts) {
     const date = new Date(w.scheduledAt);
-    const day = date.getDate();
+    const day  = date.getDate();
     if (!workoutsByDay[day]) workoutsByDay[day] = [];
     workoutsByDay[day]!.push(w);
   }
@@ -64,14 +68,12 @@ export function WorkoutCalendar({
     router.push(`/calendar?month=${newMonth}`);
   }
 
-  const today = new Date();
-  const isCurrentMonth =
-    today.getFullYear() === safeYear && today.getMonth() === safeMonth;
-  const todayDay = isCurrentMonth ? today.getDate() : -1;
+  const today          = new Date();
+  const isCurrentMonth = today.getFullYear() === safeYear && today.getMonth() === safeMonth;
+  const todayDay       = isCurrentMonth ? today.getDate() : -1;
 
-  // Build grid cells (blanks + day cells)
   const totalCells = startDayOfWeek + daysInMonth;
-  const rows = Math.ceil(totalCells / 7);
+  const rows       = Math.ceil(totalCells / 7);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -96,9 +98,9 @@ export function WorkoutCalendar({
         </button>
       </div>
 
-      {/* Day headers */}
+      {/* Day headers — Sunday first */}
       <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-800">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+        {DAY_HEADERS.map(d => (
           <div
             key={d}
             className="py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400"
@@ -111,10 +113,10 @@ export function WorkoutCalendar({
       {/* Grid */}
       <div className="grid grid-cols-7">
         {Array.from({ length: rows * 7 }).map((_, idx) => {
-          const dayNum = idx - startDayOfWeek + 1;
-          const isValidDay = dayNum >= 1 && dayNum <= daysInMonth;
+          const dayNum    = idx - startDayOfWeek + 1;
+          const isValidDay  = dayNum >= 1 && dayNum <= daysInMonth;
           const dayWorkouts = isValidDay ? (workoutsByDay[dayNum] ?? []) : [];
-          const isToday = dayNum === todayDay;
+          const isToday     = dayNum === todayDay;
 
           return (
             <div
@@ -139,7 +141,7 @@ export function WorkoutCalendar({
                   </span>
 
                   <div className="space-y-1">
-                    {dayWorkouts.map((w) => (
+                    {dayWorkouts.map(w => (
                       <Link
                         key={w.id}
                         href={`/workouts/${w.id}`}

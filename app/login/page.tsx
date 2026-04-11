@@ -5,30 +5,32 @@ import { Activity } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// Server Action for login — validates credentials, determines role, redirects directly
+// Server Action for login
 async function loginAction(formData: FormData) {
   "use server";
 
-  const email = formData.get("email") as string;
+  const username = formData.get("username") as string;
   const password = formData.get("password") as string;
 
   // Look up role before signIn so we can redirect to the right dashboard directly
   let redirectTo = "/calendar";
   try {
-    const user = await prisma.user.findUnique({ where: { email }, select: { role: true, passwordHash: true } });
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ name: username }, { email: username }] },
+      select: { role: true, passwordHash: true },
+    });
     if (user?.passwordHash && await bcrypt.compare(password, user.passwordHash)) {
       redirectTo = user.role === "TRAINER" ? "/trainer/dashboard" : "/calendar";
     }
   } catch {
-    // If DB lookup fails, fall back to "/" — the root page will handle the redirect
     redirectTo = "/";
   }
 
   try {
-    await signIn("credentials", { email, password, redirectTo });
+    await signIn("credentials", { username, password, redirectTo });
   } catch (error) {
     if (error instanceof AuthError) {
-      return redirect(`/login?error=${encodeURIComponent("Invalid email or password")}`);
+      return redirect(`/login?error=${encodeURIComponent("Invalid username or password")}`);
     }
     throw error;
   }
@@ -75,18 +77,18 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <form action={loginAction} className="space-y-4">
             <div>
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
               >
-                Email
+                Username
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
                 required
-                placeholder="you@example.com"
+                placeholder="Your name or email"
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
               />
             </div>

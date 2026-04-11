@@ -27,7 +27,8 @@ function statusBg(status: string) {
   return "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800";
 }
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// Sunday first
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -48,10 +49,9 @@ export function WorkoutCalendar({ workouts }: WorkoutCalendarProps) {
     workoutMap.get(key)!.push(w);
   }
 
-  // Calendar grid
+  // Calendar grid — Sunday first
   const firstDay = new Date(year, month, 1);
-  // Week starts Monday: getDay() returns 0=Sun; shift so Mon=0
-  const startOffset = (firstDay.getDay() + 6) % 7;
+  const startOffset = firstDay.getDay(); // 0=Sun
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const cells: (number | null)[] = [

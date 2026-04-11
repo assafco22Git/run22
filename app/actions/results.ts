@@ -96,43 +96,47 @@ export async function logWorkoutResult(
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const result = await tx.workoutResult.create({
-        data: {
-          workoutId,
-          traineeId: traineeProfile.id,
-          totalDistance: totalDistance ?? null,
-          totalDuration: totalDuration ?? null,
-          avgPace: avgPace ?? null,
-          avgHeartRate: avgHeartRate ?? null,
-          maxHeartRate: maxHeartRate ?? null,
-          notes: notes ?? null,
-          perceivedEffort: perceivedEffort ?? null,
-          rating: rating ?? null,
-        },
-      });
+    // Create result (no transactions — Neon HTTP doesn't support them)
+    const result = await prisma.workoutResult.create({
+      data: {
+        workoutId,
+        traineeId: traineeProfile.id,
+        totalDistance: totalDistance ?? null,
+        totalDuration: totalDuration ?? null,
+        avgPace: avgPace ?? null,
+        avgHeartRate: avgHeartRate ?? null,
+        maxHeartRate: maxHeartRate ?? null,
+        notes: notes ?? null,
+        perceivedEffort: perceivedEffort ?? null,
+        rating: rating ?? null,
+      },
+    });
 
-      if (segmentResults && segmentResults.length > 0) {
-        await tx.workoutSegmentResult.createMany({
-          data: segmentResults.map((sr) => ({
+    // Create segment results one by one
+    if (segmentResults && segmentResults.length > 0) {
+      for (const sr of segmentResults) {
+        await prisma.workoutSegmentResult.create({
+          data: {
             resultId: result.id,
             segmentId: sr.segmentId,
             order: sr.order,
             distance: sr.distance ?? null,
             duration: sr.duration ?? null,
             pace: sr.pace ?? null,
-          })),
+          },
         });
       }
+    }
 
-      await tx.workout.update({
-        where: { id: workoutId },
-        data: { status: "COMPLETED" },
-      });
+    // Mark workout as completed
+    await prisma.workout.update({
+      where: { id: workoutId },
+      data: { status: "COMPLETED" },
     });
 
     return { success: true };
-  } catch {
+  } catch (e) {
+    console.error("logWorkoutResult error:", e);
     return { success: false, error: "Failed to log workout result" };
   }
 }
