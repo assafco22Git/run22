@@ -7,6 +7,16 @@ export const authConfig = {
   },
   providers: [],
   callbacks: {
+    // Edge-safe: map token.role → session.user.role so the proxy can read it
+    session({ session, token }) {
+      if (token?.role) {
+        (session.user as { role: string }).role = token.role as string;
+      }
+      if (token?.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const role = auth?.user?.role as Role | undefined;

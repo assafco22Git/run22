@@ -50,6 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
+    // session callback is inherited from authConfig (reads role + id from token)
     ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
@@ -57,13 +58,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role as Role;
       }
       return token;
-    },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
-      }
-      return session;
     },
   },
 });
