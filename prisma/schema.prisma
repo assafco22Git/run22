@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String?
+  name         String
+  role         String  @default("TRAINEE")
+  image        String?
+
+  stravaId           String?   @unique
+  stravaAccessToken  String?
+  stravaRefreshToken String?
+  stravaTokenExpiry  DateTime?
+  stravaEnabled      Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  traineeProfile TraineeProfile?
+  trainerProfile TrainerProfile?
+  accounts       Account[]
+  sessions       Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model TrainerProfile {
+  id     String  @id @default(cuid())
+  userId String  @unique
+  bio    String?
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainees TrainerTrainee[]
+  workouts Workout[]
+}
+
+model TraineeProfile {
+  id     String    @id @default(cuid())
+  userId String    @unique
+  dob    DateTime?
+  gender String?
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainers TrainerTrainee[]
+  workouts Workout[]
+  results  WorkoutResult[]
+  races    Race[]
+}
+
+model TrainerTrainee {
+  id         String   @id @default(cuid())
+  trainerId  String
+  traineeId  String
+  assignedAt DateTime @default(now())
+
+  trainer TrainerProfile @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  trainee TraineeProfile @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  @@unique([trainerId, traineeId])
+}
+
+model Workout {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  scheduledAt DateTime
+  status      String   @default("PENDING")
+
+  trainerId String
+  traineeId String
+
+  trainer  TrainerProfile   @relation(fields: [trainerId], references: [id])
+  trainee  TraineeProfile   @relation(fields: [traineeId], references: [id])
+  segments WorkoutSegment[]
+  result   WorkoutResult?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WorkoutSegment {
+  id        String  @id @default(cuid())
+  workoutId String
+  order     Int
+  distance  Float
+  pace      String
+  remarks   String?
+
+  workout Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+}
+
+model WorkoutResult {
+  id        String   @id @default(cuid())
+  workoutId String   @unique
+  traineeId String
+  loggedAt  DateTime @default(now())
+
+  totalDistance   Float?
+  totalDuration   Int?
+  avgPace         String?
+  avgHeartRate    Int?
+  maxHeartRate    Int?
+  notes           String?
+  perceivedEffort Int?
+  rating          Int?
+
+  stravaActivityId String? @unique
+  stravaData       String?
+
+  workout        Workout                @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  trainee        TraineeProfile         @relation(fields: [traineeId], references: [id])
+  segmentResults WorkoutSegmentResult[]
+}
+
+model WorkoutSegmentResult {
+  id        String  @id @default(cuid())
+  resultId  String
+  segmentId String
+  order     Int
+  distance  Float?
+  duration  Int?
+  pace      String?
+
+  result WorkoutResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+}
+
+model Race {
+  id        String   @id @default(cuid())
+  traineeId String
+  name      String
+  distance  Float
+  time      Int
+  date      DateTime
+  notes     String?
+
+  trainee TraineeProfile @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
