@@ -28,6 +28,7 @@ model User {
   trainerProfile TrainerProfile?
   accounts       Account[]
   sessions       Session[]
+  notifications  Notification[]
 }
 
 model Account {
@@ -175,6 +176,18 @@ model WorkoutSegmentResult {
   pace      String?
 
   result WorkoutResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   // recipient
+  title     String
+  body      String
+  href      String?  // optional link
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Race {

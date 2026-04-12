@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { createNotification } from "@/lib/notifications";
 import type { Role } from "@/types";
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
@@ -205,6 +206,23 @@ export async function createWorkout(
           pace: seg.pace,
           remarks: seg.remarks ?? null,
         },
+      });
+    }
+
+    // Notify the trainee
+    const traineeUser = await prisma.traineeProfile.findUnique({
+      where: { id: traineeId },
+      select: { userId: true },
+    });
+    if (traineeUser) {
+      const dateStr = new Date(workout.scheduledAt).toLocaleDateString("en-GB", {
+        weekday: "long", day: "numeric", month: "long",
+      });
+      await createNotification({
+        userId: traineeUser.userId,
+        title: "New workout scheduled",
+        body: `"${workout.title}" has been added for ${dateStr}`,
+        href: `/workouts/${workout.id}`,
       });
     }
 

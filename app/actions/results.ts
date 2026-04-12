@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { createNotification } from "@/lib/notifications";
 import type { Role } from "@/types";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
@@ -205,10 +206,26 @@ export async function logWorkoutResult(
     }
 
     // Mark workout as completed
-    await prisma.workout.update({
+    const completedWorkout = await prisma.workout.update({
       where: { id: workoutId },
       data: { status: "COMPLETED" },
+      select: { title: true, trainerId: true },
     });
+
+    // Notify the trainer
+    const trainerUser = await prisma.trainerProfile.findUnique({
+      where: { id: completedWorkout.trainerId },
+      select: { userId: true },
+    });
+    if (trainerUser) {
+      const traineeName = session.user.name ?? "Your trainee";
+      await createNotification({
+        userId: trainerUser.userId,
+        title: "Workout result logged",
+        body: `${traineeName} logged a result for "${completedWorkout.title}"`,
+        href: `/trainer/workouts/${workoutId}`,
+      });
+    }
 
     return { success: true };
   } catch (e) {

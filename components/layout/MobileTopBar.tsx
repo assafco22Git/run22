@@ -3,6 +3,7 @@
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Run22Logo } from "@/components/Run22Logo";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface MobileTopBarProps {
   logoutAction: () => Promise<void>;
@@ -16,6 +17,7 @@ export function MobileTopBar({ logoutAction }: MobileTopBarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-1">
+        <NotificationBell />
         <ThemeToggle />
         <form action={logoutAction}>
           <button

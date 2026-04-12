@@ -13,6 +13,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Run22Logo } from "@/components/Run22Logo";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const navItems = [
   {
@@ -112,7 +113,10 @@ export function TrainerSidebar({
               )}
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <ThemeToggle />
+          </div>
         </div>
 
         <form action={logoutAction}>
