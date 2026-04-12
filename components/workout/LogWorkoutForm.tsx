@@ -125,7 +125,7 @@ export function LogWorkoutForm({
     const result = await action(workoutId, payload);
 
     if (result.success) {
-      router.push(`/workouts/${workoutId}`);
+      window.location.href = `/workouts/${workoutId}`;
     } else {
       setError(result.error ?? "Failed to save result");
       setIsPending(false);

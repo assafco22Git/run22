@@ -16,13 +16,15 @@ import { DashboardCharts } from "@/components/charts/DashboardCharts";
 function weekKey(date: Date): string {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay()); // rewind to Sunday
+  const day = d.getDay();
+  const daysFromMonday = day === 0 ? 6 : day - 1; // rewind to Monday
+  d.setDate(d.getDate() - daysFromMonday);
   return d.toISOString().slice(0, 10);  // "YYYY-MM-DD"
 }
 
 /** Short label for the chart, e.g. "Apr 6" */
-function weekLabel(sundayKey: string): string {
-  const d = new Date(sundayKey + "T12:00:00Z");
+function weekLabel(mondayKey: string): string {
+  const d = new Date(mondayKey + "T12:00:00Z");
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
@@ -73,8 +75,9 @@ export default async function DashboardPage() {
 
   // This week boundaries (Sunday = start)
   const startOfWeek = new Date();
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
+  const todayDay = startOfWeek.getDay();
+  startOfWeek.setDate(startOfWeek.getDate() - (todayDay === 0 ? 6 : todayDay - 1)); // rewind to Monday
 
   const workoutsThisWeek = await prisma.workout.count({
     where: {
@@ -139,7 +142,7 @@ export default async function DashboardPage() {
     weekMap.set(key, existing);
   }
 
-  // Build last 8 Sunday-anchored week keys (oldest → newest)
+  // Build last 8 Monday-anchored week keys (oldest → newest)
   const weekLabels: string[] = [];
   for (let i = 7; i >= 0; i--) {
     const d = new Date();
