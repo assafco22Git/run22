@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { secondsToMMSS, paceToSeconds } from "@/lib/pace";
 import type { PaceTrendPoint } from "@/components/charts/PaceTrendChart";
-import type { WeeklyNavPoint } from "@/components/charts/WeeklyVolumeNavigator";
+import type { WeeklyNavPoint, DayPoint } from "@/components/charts/WeeklyVolumeNavigator";
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -131,20 +131,35 @@ export default async function DashboardPage() {
 
   // ─── Build chart data (last 8 weeks) ───────────────────────────────────────
 
-  const weekMap = new Map<
-    string,
-    { km: number; paceSum: number; paceCount: number }
-  >();
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+  // weekKey → dayOfWeek (0=Sun…6=Sat) → workouts that day
+  type DayWorkouts = { title: string; km: number }[];
+  const weekDayMap = new Map<string, DayWorkouts[]>();
+
+  // weekKey → pace accumulator
+  const weekPaceMap = new Map<string, { paceSum: number; paceCount: number }>();
 
   for (const r of recentResults) {
-    const key = weekKey(r.workout.scheduledAt);
-    const existing = weekMap.get(key) ?? { km: 0, paceSum: 0, paceCount: 0 };
-    existing.km += (r.totalDistance ?? 0) / 1000;
-    if (r.avgPace) {
-      existing.paceSum += paceToSeconds(r.avgPace);
-      existing.paceCount += 1;
+    const wKey = weekKey(r.workout.scheduledAt);
+    const dow = r.workout.scheduledAt.getDay(); // 0=Sun … 6=Sat
+
+    // Per-day accumulation
+    if (!weekDayMap.has(wKey)) {
+      weekDayMap.set(wKey, Array.from({ length: 7 }, () => []));
     }
-    weekMap.set(key, existing);
+    weekDayMap.get(wKey)![dow].push({
+      title: r.workout.title,
+      km: (r.totalDistance ?? 0) / 1000,
+    });
+
+    // Pace accumulation
+    if (r.avgPace) {
+      const p = weekPaceMap.get(wKey) ?? { paceSum: 0, paceCount: 0 };
+      p.paceSum += paceToSeconds(r.avgPace);
+      p.paceCount += 1;
+      weekPaceMap.set(wKey, p);
+    }
   }
 
   // Build last 8 Sunday-anchored week keys (oldest → newest)
@@ -155,18 +170,40 @@ export default async function DashboardPage() {
     weekKeys.push(weekKey(d));
   }
 
-  const weeklyData: WeeklyNavPoint[] = weekKeys.map((key) => ({
-    label: weekRangeLabel(key),
-    km: parseFloat((weekMap.get(key)?.km ?? 0).toFixed(1)),
-  }));
+  const weeklyData: WeeklyNavPoint[] = weekKeys.map((wKey) => {
+    const dayGroups = weekDayMap.get(wKey) ?? Array.from({ length: 7 }, () => []);
+    // Sunday of this week at UTC noon for safe date arithmetic
+    const sunDate = new Date(wKey + "T12:00:00Z");
+
+    const days: DayPoint[] = DAY_NAMES.map((name, i) => {
+      const d = new Date(sunDate.getTime() + i * 86_400_000);
+      const date = d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      });
+      const workouts = dayGroups[i] ?? [];
+      return {
+        day: name,
+        date,
+        km: parseFloat(workouts.reduce((s, w) => s + w.km, 0).toFixed(2)),
+        workouts,
+      };
+    });
+
+    return {
+      label: weekRangeLabel(wKey),
+      km: parseFloat(days.reduce((s, d) => s + d.km, 0).toFixed(1)),
+      days,
+    };
+  });
 
   const paceData: PaceTrendPoint[] = weekKeys
     .map((key) => {
-      const w = weekMap.get(key);
+      const p = weekPaceMap.get(key);
       return {
         week: weekShortLabel(key),
-        paceSeconds:
-          w && w.paceCount > 0 ? Math.round(w.paceSum / w.paceCount) : 0,
+        paceSeconds: p && p.paceCount > 0 ? Math.round(p.paceSum / p.paceCount) : 0,
       };
     })
     .filter((p) => p.paceSeconds > 0);
