@@ -1,4 +1,5 @@
 import { requireTrainer } from "@/lib/auth-helpers";
+import { prisma } from "@/lib/prisma";
 import { signOut } from "@/auth";
 import { TrainerSidebar } from "@/components/layout/TrainerSidebar";
 import { TrainerMobileNav } from "@/components/layout/TrainerMobileNav";
@@ -15,14 +16,17 @@ export default async function TrainerLayout({
   children: React.ReactNode;
 }) {
   const session = await requireTrainer();
-  const userName  = session.user.name ?? "Trainer";
-  const userEmail = session.user.email;
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true, image: true },
+  });
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       <TrainerSidebar
-        userName={userName}
-        userEmail={userEmail}
+        userName={user?.name ?? "Trainer"}
+        userEmail={user?.email}
+        userImage={user?.image}
         logoutAction={logoutAction}
       />
 

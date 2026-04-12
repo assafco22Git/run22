@@ -1,4 +1,5 @@
 import { requireTrainee } from "@/lib/auth-helpers";
+import { prisma } from "@/lib/prisma";
 import { signOut } from "@/auth";
 import { TraineeSidebar } from "@/components/layout/TraineeSidebar";
 import { TraineeMobileNav } from "@/components/layout/TraineeMobileNav";
@@ -14,15 +15,18 @@ export default async function TraineeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session   = await requireTrainee();
-  const userName  = session.user.name ?? "Trainee";
-  const userEmail = session.user.email;
+  const session = await requireTrainee();
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true, image: true },
+  });
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       <TraineeSidebar
-        userName={userName}
-        userEmail={userEmail}
+        userName={user?.name ?? "Trainee"}
+        userEmail={user?.email}
+        userImage={user?.image}
         logoutAction={logoutAction}
       />
 

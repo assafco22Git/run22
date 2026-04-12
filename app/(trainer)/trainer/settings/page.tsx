@@ -2,13 +2,14 @@ import { requireTrainer } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { BioForm } from "@/components/trainer/BioForm";
 import { TrainerCredentialsForm } from "@/components/trainer/TrainerCredentialsForm";
+import { ProfilePicture } from "@/components/ProfilePicture";
 
 export default async function TrainerSettingsPage() {
   const session = await requireTrainer();
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, username: true },
+    select: { name: true, email: true, username: true, image: true },
   });
 
   const trainerProfile = await prisma.trainerProfile.findUnique({
@@ -25,6 +26,12 @@ export default async function TrainerSettingsPage() {
       {/* Account & credentials */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 mb-5">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Account</h2>
+
+        {/* Avatar */}
+        <div className="mb-5 pb-5 border-b border-gray-100 dark:border-gray-800">
+          <ProfilePicture currentImage={user?.image} name={user?.name ?? "?"} />
+        </div>
+
         <TrainerCredentialsForm
           initialName={user?.name ?? ""}
           initialEmail={user?.email ?? ""}

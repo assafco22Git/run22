@@ -2,6 +2,7 @@ import { requireTrainee } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { updateName } from "@/app/actions/profile";
 import { StravaSyncButton } from "@/components/StravaSyncButton";
+import { ProfilePicture } from "@/components/ProfilePicture";
 
 export default async function SettingsPage({
   searchParams,
@@ -13,7 +14,7 @@ export default async function SettingsPage({
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, email: true, stravaId: true },
+    select: { id: true, name: true, email: true, image: true, stravaId: true },
   });
 
   const isStravaConnected = !!user?.stravaId;
@@ -41,6 +42,12 @@ export default async function SettingsPage({
       {/* Profile */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-5 mb-4">
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Profile</h2>
+
+        {/* Avatar */}
+        <div className="mb-5 pb-5 border-b border-gray-100 dark:border-gray-800">
+          <ProfilePicture currentImage={user?.image} name={user?.name ?? "?"} />
+        </div>
+
         <form action={updateName} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Name</label>

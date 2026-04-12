@@ -9,6 +9,7 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Run22Logo } from "@/components/Run22Logo";
@@ -39,12 +40,14 @@ const navItems = [
 interface TrainerSidebarProps {
   userName: string;
   userEmail?: string | null;
+  userImage?: string | null;
   logoutAction: () => Promise<void>;
 }
 
 export function TrainerSidebar({
   userName,
   userEmail,
+  userImage,
   logoutAction,
 }: TrainerSidebarProps) {
   const pathname = usePathname();
@@ -84,15 +87,30 @@ export function TrainerSidebar({
       {/* Footer */}
       <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
         <div className="flex items-center justify-between px-2">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-              {userName}
-            </p>
-            {userEmail && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {userEmail}
-              </p>
+          <div className="flex items-center gap-2.5 min-w-0">
+            {userImage ? (
+              <Image
+                src={userImage}
+                alt={userName}
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
+                {userName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+              </div>
             )}
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                {userName}
+              </p>
+              {userEmail && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {userEmail}
+                </p>
+              )}
+            </div>
           </div>
           <ThemeToggle />
         </div>
