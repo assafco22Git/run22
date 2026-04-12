@@ -4,11 +4,12 @@ import { requireTrainer } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Mail, Calendar, Dumbbell, AtSign } from "lucide-react";
+import { ArrowLeft, Mail, Calendar, Dumbbell, AtSign, Pencil } from "lucide-react";
 import type { WorkoutStatus } from "@/types";
 import { TraineeAnalyticsChart } from "@/components/charts/TraineeAnalyticsChart";
 import { TraineeActions } from "@/components/trainer/TraineeActions";
 import { WorkoutCalendar } from "@/components/trainer/WorkoutCalendar";
+import { DeleteWorkoutButton } from "@/components/DeleteWorkoutButton";
 
 function statusBadge(status: string) {
   const s = status as WorkoutStatus;
@@ -246,10 +247,13 @@ export default async function TraineeDetailPage({ params }: PageProps) {
               <li key={workout.id} className="px-5 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <Link
+                        href={`/trainer/workouts/${workout.id}`}
+                        className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                      >
                         {workout.title}
-                      </p>
+                      </Link>
                       {statusBadge(workout.status)}
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -268,11 +272,24 @@ export default async function TraineeDetailPage({ params }: PageProps) {
                       </p>
                     )}
                   </div>
-                  {workout.result?.totalDistance != null && (
-                    <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
-                      {workout.result.totalDistance.toFixed(1)} km
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {workout.result?.totalDistance != null && (
+                      <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                        {workout.result.totalDistance.toFixed(1)} km
+                      </span>
+                    )}
+                    <Link
+                      href={`/trainer/workouts/${workout.id}/edit`}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      Edit
+                    </Link>
+                    <DeleteWorkoutButton
+                      workoutId={workout.id}
+                      redirectTo={`/trainer/trainees/${traineeId}`}
+                    />
+                  </div>
                 </div>
               </li>
             ))}
