@@ -18,7 +18,7 @@ export function Run22Logo({ className, size = "md" }: Run22LogoProps) {
     <div
       className={cn("flex items-center shrink-0", s.wrapper, className)}
       aria-label="run22"
-      style={{ fontFamily: "var(--font-google-sans), 'DM Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-sans), sans-serif" }}
     >
       {/* Speed lines — left of text */}
       <div className={cn("flex flex-col items-start self-center", s.lines)}>

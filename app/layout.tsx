@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, DM_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster-wrapper";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const googleSans = localFont({
+  src: [
+    {
+      path: "../public/fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/GoogleSans-Italic-VariableFont_GRAD,opsz,wght.ttf",
+      style: "italic",
+    },
+  ],
   variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-// DM Sans — closest publicly available match to Google Sans
-const dmSans = DM_Sans({
-  variable: "--font-google-sans",
-  subsets: ["latin"],
-  weight: ["700", "800"],
-  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -44,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} ${dmSans.variable} h-full antialiased`}
+      className={`${googleSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
