@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { updateTrainerCredentials } from "@/app/actions/profile";
 import { toast } from "sonner";
@@ -34,7 +33,6 @@ export function TrainerCredentialsForm({
   initialEmail,
   initialUsername,
 }: TrainerCredentialsFormProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [name, setName] = useState(initialName);
@@ -56,8 +54,7 @@ export function TrainerCredentialsForm({
 
       if (result.success) {
         toast.success("Settings saved");
-        setNewPassword("");
-        router.refresh();
+        window.location.reload();
       } else {
         toast.error(result.error ?? "Failed to save");
       }

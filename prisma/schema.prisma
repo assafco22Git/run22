@@ -16,6 +16,11 @@ model User {
   role         String  @default("TRAINEE")
   image        String?
 
+  stravaId           String?   @unique
+  stravaAccessToken  String?
+  stravaRefreshToken String?
+  stravaTokenExpiry  DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -139,6 +144,9 @@ model WorkoutResult {
   notes           String?
   perceivedEffort Int?
   rating          Int?
+
+  stravaActivityId String? @unique
+  stravaData       String?
 
   workout        Workout                @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   trainee        TraineeProfile         @relation(fields: [traineeId], references: [id])

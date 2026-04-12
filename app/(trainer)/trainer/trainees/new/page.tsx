@@ -58,7 +58,7 @@ function LinkExistingTab() {
       const res = await addTrainee(email);
       setResult(res);
       if (res.success) {
-        setTimeout(() => { router.push("/trainer/trainees"); router.refresh(); }, 1500);
+        setTimeout(() => { window.location.href = "/trainer/trainees"; }, 1500);
       }
     });
   }
@@ -117,7 +117,7 @@ function CreateNewTab() {
       const res = await createTrainee({ name, email, password, username });
       setResult(res);
       if (res.success) {
-        setTimeout(() => { router.push("/trainer/trainees"); router.refresh(); }, 1500);
+        setTimeout(() => { window.location.href = "/trainer/trainees"; }, 1500);
       }
     });
   }

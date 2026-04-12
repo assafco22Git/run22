@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { deleteWorkout } from "@/app/actions/workouts";
 import { toast } from "sonner";
@@ -12,7 +11,6 @@ interface DeleteWorkoutButtonProps {
 }
 
 export function DeleteWorkoutButton({ workoutId, redirectTo }: DeleteWorkoutButtonProps) {
-  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -28,8 +26,7 @@ export function DeleteWorkoutButton({ workoutId, redirectTo }: DeleteWorkoutButt
       const result = await deleteWorkout(workoutId);
       if (result.success) {
         toast.success("Workout deleted");
-        router.push(redirectTo);
-        router.refresh();
+        window.location.href = redirectTo;
       } else {
         toast.error(result.error ?? "Failed to delete workout");
         setConfirming(false);

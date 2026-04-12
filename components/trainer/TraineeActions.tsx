@@ -77,9 +77,7 @@ export function TraineeActions({
       });
       if (result.success) {
         toast.success("Trainee updated");
-        setEditing(false);
-        setNewPassword("");
-        router.refresh();
+        window.location.reload();
       } else {
         toast.error(result.error ?? "Failed to update");
       }
@@ -92,7 +90,7 @@ export function TraineeActions({
       const result = await removeTrainee(traineeId);
       if (result.success) {
         toast.success("Trainee removed");
-        router.push("/trainer/trainees");
+        window.location.href = "/trainer/trainees";
       } else {
         toast.error(result.error ?? "Failed to remove trainee");
       }

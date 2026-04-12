@@ -17,6 +17,11 @@ export async function updateName(formData: FormData): Promise<void> {
   const parsed = nameSchema.safeParse(raw);
   if (!parsed.success) return; // silently ignore — client validates first
 
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+
   await prisma.user.update({
     where: { id: session.user.id },
     data: { name: parsed.data },
@@ -24,6 +29,8 @@ export async function updateName(formData: FormData): Promise<void> {
 
   revalidatePath("/settings");
   revalidatePath("/trainer/settings");
+
+  redirect(currentUser?.role === "TRAINER" ? "/trainer/settings" : "/settings");
 }
 
 export async function updateTrainerCredentials(data: {

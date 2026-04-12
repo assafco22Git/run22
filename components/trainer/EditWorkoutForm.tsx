@@ -184,8 +184,7 @@ export function EditWorkoutForm({
 
       if (result.success) {
         toast.success("Workout updated");
-        router.push(`/trainer/workouts/${workoutId}`);
-        router.refresh();
+        window.location.href = `/trainer/workouts/${workoutId}`;
       } else {
         toast.error(result.error ?? "Failed to update workout");
       }

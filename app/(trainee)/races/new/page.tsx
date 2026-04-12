@@ -76,8 +76,7 @@ export default function NewRacePage() {
       });
 
       if (result.success) {
-        router.push("/races");
-        router.refresh();
+        window.location.href = "/races";
       } else {
         setError(result.error ?? "Failed to save race");
       }

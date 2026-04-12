@@ -298,7 +298,7 @@ export default function NewWorkoutPage() {
 
     if (result.success) {
       toast.success("Workout created!");
-      router.push(`/trainer/trainees/${traineeId}`);
+      window.location.href = `/trainer/trainees/${traineeId}`;
     } else {
       toast.error(result.error ?? "Failed to create workout");
     }
