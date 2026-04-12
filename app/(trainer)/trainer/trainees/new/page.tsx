@@ -104,6 +104,7 @@ function LinkExistingTab() {
 function CreateNewTab() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
@@ -113,7 +114,7 @@ function CreateNewTab() {
     e.preventDefault();
     setResult(null);
     startTransition(async () => {
-      const res = await createTrainee({ name, email, password });
+      const res = await createTrainee({ name, email, password, username });
       setResult(res);
       if (res.success) {
         setTimeout(() => { router.push("/trainer/trainees"); router.refresh(); }, 1500);
@@ -140,6 +141,21 @@ function CreateNewTab() {
           required
           disabled={isPending || done}
         />
+      </div>
+
+      <div>
+        <FieldLabel htmlFor="new-username">Username</FieldLabel>
+        <Input
+          id="new-username"
+          type="text"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          placeholder="e.g. alice_cohen"
+          required
+          pattern="[a-z0-9_.]{3,30}"
+          disabled={isPending || done}
+        />
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Used to log in · letters, numbers, _ and . only</p>
       </div>
 
       <div>
@@ -178,7 +194,7 @@ function CreateNewTab() {
 
       <button
         type="submit"
-        disabled={isPending || !name.trim() || !email.trim() || !password || done}
+        disabled={isPending || !name.trim() || !username.trim() || !email.trim() || !password || done}
         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 dark:disabled:bg-emerald-800 text-white text-sm font-medium transition-colors disabled:cursor-not-allowed"
       >
         {isPending

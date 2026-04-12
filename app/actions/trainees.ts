@@ -111,6 +111,7 @@ export async function createTrainee(data: {
   name: string;
   email: string;
   password: string;
+  username: string;
 }): Promise<{ success: boolean; error?: string }> {
   const trainerProfile = await requireTrainerProfile();
   if (!trainerProfile) return { success: false, error: "Unauthorized" };
@@ -118,22 +119,29 @@ export async function createTrainee(data: {
   const name = data.name.trim();
   const email = data.email.trim().toLowerCase();
   const password = data.password;
+  const username = data.username.trim().toLowerCase();
 
   if (!name) return { success: false, error: "Name is required" };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     return { success: false, error: "Invalid email address" };
   if (password.length < 6)
     return { success: false, error: "Password must be at least 6 characters" };
+  if (!/^[a-z0-9_.]{3,30}$/.test(username))
+    return { success: false, error: "Username must be 3–30 chars: letters, numbers, _ and . only" };
 
   // Check email not already in use
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { success: false, error: "An account with that email already exists" };
 
+  // Check username not already in use
+  const existingUsername = await prisma.user.findUnique({ where: { username } });
+  if (existingUsername) return { success: false, error: "That username is already taken" };
+
   const passwordHash = await bcrypt.hash(password, 12);
 
   // Create user
   const user = await prisma.user.create({
-    data: { name, email, passwordHash, role: "TRAINEE" },
+    data: { name, email, passwordHash, role: "TRAINEE", username },
   });
 
   // Create trainee profile
@@ -176,7 +184,7 @@ export async function updateTraineeDetails(
     name: string;
     dob?: string;
     gender?: string;
-    email?: string;
+    username?: string;
     newPassword?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
@@ -196,16 +204,16 @@ export async function updateTraineeDetails(
   const name = data.name.trim();
   if (!name) return { success: false, error: "Name is required" };
 
-  // Validate new email if provided
-  if (data.email) {
-    const newEmail = data.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail))
-      return { success: false, error: "Invalid email address" };
+  // Validate new username if provided
+  if (data.username) {
+    const newUsername = data.username.trim().toLowerCase();
+    if (!/^[a-z0-9_.]{3,30}$/.test(newUsername))
+      return { success: false, error: "Username must be 3–30 chars: letters, numbers, _ and . only" };
 
     // Check not taken by another user
-    const conflict = await prisma.user.findUnique({ where: { email: newEmail } });
+    const conflict = await prisma.user.findUnique({ where: { username: newUsername } });
     if (conflict && conflict.id !== traineeProfile.userId)
-      return { success: false, error: "That email is already in use" };
+      return { success: false, error: "That username is already taken" };
   }
 
   // Validate new password if provided
@@ -213,8 +221,8 @@ export async function updateTraineeDetails(
     return { success: false, error: "Password must be at least 6 characters" };
 
   // Build user update payload
-  const userUpdate: { name: string; email?: string; passwordHash?: string } = { name };
-  if (data.email) userUpdate.email = data.email.trim().toLowerCase();
+  const userUpdate: { name: string; username?: string; passwordHash?: string } = { name };
+  if (data.username) userUpdate.username = data.username.trim().toLowerCase();
   if (data.newPassword) userUpdate.passwordHash = await bcrypt.hash(data.newPassword, 12);
 
   await prisma.user.update({

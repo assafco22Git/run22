@@ -22,10 +22,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const identifier = credentials.username as string;
 
-        // Look up by name (username) first, fall back to email
+        // Look up by username first, then name, then email
         const user = await prisma.user.findFirst({
           where: {
             OR: [
+              { username: identifier },
               { name: identifier },
               { email: identifier },
             ],

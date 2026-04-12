@@ -32,25 +32,34 @@ async function main() {
   const trainer = await findOrCreate(
     () => prisma.user.findUnique({ where: { email: "trainer@app.com" } }),
     () => prisma.user.create({
-      data: { email: "trainer@app.com", passwordHash: trainerPassword, name: "Coach Assaf", role: "TRAINER" },
+      data: { email: "trainer@app.com", passwordHash: trainerPassword, name: "Coach Assaf", role: "TRAINER", username: "coach_assaf" },
     })
   );
+  if (!trainer.username) {
+    await prisma.user.update({ where: { id: trainer.id }, data: { username: "coach_assaf" } });
+  }
   console.log("Trainer:", trainer.email);
 
   const alice = await findOrCreate(
     () => prisma.user.findUnique({ where: { email: "alice@app.com" } }),
     () => prisma.user.create({
-      data: { email: "alice@app.com", passwordHash: traineePassword, name: "Alice Cohen", role: "TRAINEE" },
+      data: { email: "alice@app.com", passwordHash: traineePassword, name: "Alice Cohen", role: "TRAINEE", username: "alice_cohen" },
     })
   );
+  if (!alice.username) {
+    await prisma.user.update({ where: { id: alice.id }, data: { username: "alice_cohen" } });
+  }
   console.log("Trainee:", alice.email);
 
   const bob = await findOrCreate(
     () => prisma.user.findUnique({ where: { email: "bob@app.com" } }),
     () => prisma.user.create({
-      data: { email: "bob@app.com", passwordHash: traineePassword, name: "Bob Levi", role: "TRAINEE" },
+      data: { email: "bob@app.com", passwordHash: traineePassword, name: "Bob Levi", role: "TRAINEE", username: "bob_levi" },
     })
   );
+  if (!bob.username) {
+    await prisma.user.update({ where: { id: bob.id }, data: { username: "bob_levi" } });
+  }
   console.log("Trainee:", bob.email);
 
   // ── Profiles ───────────────────────────────────────────────────────────────

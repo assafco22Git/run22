@@ -9,7 +9,7 @@ import { removeTrainee, updateTraineeDetails } from "@/app/actions/trainees";
 interface TraineeActionsProps {
   traineeId: string;
   initialName: string;
-  initialEmail: string;
+  initialUsername?: string | null;
   initialDob?: string | null;   // "YYYY-MM-DD"
   initialGender?: string | null;
 }
@@ -34,7 +34,7 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export function TraineeActions({
   traineeId,
   initialName,
-  initialEmail,
+  initialUsername,
   initialDob,
   initialGender,
 }: TraineeActionsProps) {
@@ -43,7 +43,7 @@ export function TraineeActions({
 
   // Form state
   const [name, setName] = useState(initialName);
-  const [email, setEmail] = useState(initialEmail);
+  const [username, setUsername] = useState(initialUsername ?? "");
   const [dob, setDob] = useState(initialDob ?? "");
   const [gender, setGender] = useState(initialGender ?? "");
   const [newPassword, setNewPassword] = useState("");
@@ -53,7 +53,7 @@ export function TraineeActions({
 
   function resetForm() {
     setName(initialName);
-    setEmail(initialEmail);
+    setUsername(initialUsername ?? "");
     setDob(initialDob ?? "");
     setGender(initialGender ?? "");
     setNewPassword("");
@@ -65,7 +65,7 @@ export function TraineeActions({
     startTransition(async () => {
       const result = await updateTraineeDetails(traineeId, {
         name: name.trim(),
-        email: email.trim() || undefined,
+        username: username.trim() || undefined,
         dob: dob || undefined,
         gender: gender || undefined,
         newPassword: newPassword || undefined,
@@ -153,13 +153,16 @@ export function TraineeActions({
           Login credentials
         </p>
         <div>
-          <FieldLabel>Email address</FieldLabel>
+          <FieldLabel>Username</FieldLabel>
           <TextInput
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="jane@example.com"
+            type="text"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            placeholder="e.g. alice_cohen"
           />
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            3–30 chars · letters, numbers, _ and . only
+          </p>
         </div>
         <div>
           <FieldLabel>New password (leave blank to keep unchanged)</FieldLabel>
