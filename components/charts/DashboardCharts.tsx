@@ -1,11 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { WeeklyVolumePoint } from "./WeeklyVolumeChart";
+import type { WeeklyNavPoint } from "./WeeklyVolumeNavigator";
 import type { PaceTrendPoint } from "./PaceTrendChart";
 
-const WeeklyVolumeChart = dynamic(
-  () => import("./WeeklyVolumeChart").then((m) => m.WeeklyVolumeChart),
+const WeeklyVolumeNavigator = dynamic(
+  () =>
+    import("./WeeklyVolumeNavigator").then((m) => m.WeeklyVolumeNavigator),
   {
     ssr: false,
     loading: () => (
@@ -25,18 +26,28 @@ const PaceTrendChart = dynamic(
 );
 
 interface DashboardChartsProps {
-  volumeData: WeeklyVolumePoint[];
+  weeklyData: WeeklyNavPoint[];
+  initialWeekIndex: number;
   paceData: PaceTrendPoint[];
 }
 
-export function DashboardCharts({ volumeData, paceData }: DashboardChartsProps) {
+export function DashboardCharts({
+  weeklyData,
+  initialWeekIndex,
+  paceData,
+}: DashboardChartsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4 flex flex-col" style={{ minHeight: 260 }}>
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
           Weekly Volume (km)
         </h2>
-        <WeeklyVolumeChart data={volumeData} />
+        <div className="flex-1">
+          <WeeklyVolumeNavigator
+            weeks={weeklyData}
+            initialIndex={initialWeekIndex}
+          />
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4">

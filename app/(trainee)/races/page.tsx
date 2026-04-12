@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatDuration } from "@/lib/pace";
 import { RacePredictor } from "@/components/predictor/RacePredictor";
+import { TrainingPredictor } from "@/components/predictor/TrainingPredictor";
+import type { WorkoutRef } from "@/components/predictor/TrainingPredictor";
 
 export default async function RacesPage() {
   const session = await requireTrainee();
@@ -19,12 +21,41 @@ export default async function RacesPage() {
       })
     : [];
 
-  // Serialise for client components
+  // Recent workout results with distance + duration (for training predictor)
+  const workoutResults = traineeProfile
+    ? await prisma.workoutResult.findMany({
+        where: {
+          traineeId: traineeProfile.id,
+          totalDistance: { not: null },
+          totalDuration: { not: null },
+        },
+        include: {
+          workout: { select: { title: true, scheduledAt: true } },
+        },
+        orderBy: { loggedAt: "desc" },
+        take: 20,
+      })
+    : [];
+
+  // Build workout refs for the predictor (min 3 km to give meaningful predictions)
+  const workoutRefs: WorkoutRef[] = workoutResults
+    .filter((r) => (r.totalDistance ?? 0) >= 3000 && (r.totalDuration ?? 0) > 0)
+    .map((r) => ({
+      id: r.id,
+      label: `${r.workout.title} – ${r.workout.scheduledAt.toLocaleDateString(
+        "en-GB",
+        { day: "numeric", month: "short" }
+      )} (${((r.totalDistance ?? 0) / 1000).toFixed(1)} km)`,
+      distanceM: r.totalDistance!,
+      durationS: r.totalDuration!,
+    }));
+
+  // Serialise races for client components
   const racesForClient = races.map((r) => ({
     id: r.id,
     name: r.name,
-    distance: r.distance, // stored in meters
-    time: r.time, // stored in seconds
+    distance: r.distance,
+    time: r.time,
     date: r.date.toISOString(),
   }));
 
@@ -124,13 +155,29 @@ export default async function RacesPage() {
         )}
       </div>
 
-      {/* Race predictor */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-          Race Predictor
+      {/* Training-based race predictor */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4 mb-4">
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          Race Predictor — From Training
         </h2>
-        <RacePredictor races={racesForClient} />
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+          Based on your logged workout results
+        </p>
+        <TrainingPredictor workouts={workoutRefs} />
       </div>
+
+      {/* Race-based predictor */}
+      {racesForClient.length > 0 && (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            Race Predictor — From Races
+          </h2>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+            Based on your logged race times
+          </p>
+          <RacePredictor races={racesForClient} />
+        </div>
+      )}
     </div>
   );
 }

@@ -2,29 +2,36 @@ import { requireTrainee } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { secondsToMMSS, paceToSeconds } from "@/lib/pace";
-import type { WeeklyVolumePoint } from "@/components/charts/WeeklyVolumeChart";
 import type { PaceTrendPoint } from "@/components/charts/PaceTrendChart";
+import type { WeeklyNavPoint } from "@/components/charts/WeeklyVolumeNavigator";
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
  * Returns a Sunday-anchored week key: "YYYY-MM-DD" of the Sunday that starts
- * the week containing `date`. Using a real date as key avoids ISO-week
- * boundary quirks and always aligns with the app's Sunday-first calendar.
+ * the week containing `date` (Sun–Sat calendar).
  */
 function weekKey(date: Date): string {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  const day = d.getDay();
-  const daysFromMonday = day === 0 ? 6 : day - 1; // rewind to Monday
-  d.setDate(d.getDate() - daysFromMonday);
-  return d.toISOString().slice(0, 10);  // "YYYY-MM-DD"
+  d.setDate(d.getDate() - d.getDay()); // rewind to Sunday
+  return d.toISOString().slice(0, 10);
 }
 
-/** Short label for the chart, e.g. "Apr 6" */
-function weekLabel(mondayKey: string): string {
-  const d = new Date(mondayKey + "T12:00:00Z");
+/** Label like "6 Apr – 12 Apr" for a Sunday-anchored week */
+function weekRangeLabel(sundayKey: string): string {
+  const sun = new Date(sundayKey + "T12:00:00Z");
+  const sat = new Date(sun);
+  sat.setDate(sat.getDate() + 6);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return `${fmt(sun)} – ${fmt(sat)}`;
+}
+
+/** Short label for the pace chart, e.g. "Apr 6" */
+function weekShortLabel(sundayKey: string): string {
+  const d = new Date(sundayKey + "T12:00:00Z");
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
@@ -73,11 +80,10 @@ export default async function DashboardPage() {
     0
   );
 
-  // This week boundaries (Sunday = start)
+  // This week boundaries (Sunday = start, Sun–Sat)
   const startOfWeek = new Date();
   startOfWeek.setHours(0, 0, 0, 0);
-  const todayDay = startOfWeek.getDay();
-  startOfWeek.setDate(startOfWeek.getDate() - (todayDay === 0 ? 6 : todayDay - 1)); // rewind to Monday
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
 
   const workoutsThisWeek = await prisma.workout.count({
     where: {
@@ -87,7 +93,7 @@ export default async function DashboardPage() {
     },
   });
 
-  // km logged this week (results whose workout is scheduled this week)
+  // km logged this week
   const thisWeekResults = await prisma.workoutResult.findMany({
     where: {
       traineeId: traineeProfile.id,
@@ -95,10 +101,8 @@ export default async function DashboardPage() {
     },
     select: { totalDistance: true },
   });
-  const kmThisWeek = thisWeekResults.reduce(
-    (sum, r) => sum + (r.totalDistance ?? 0),
-    0
-  ) / 1000;
+  const kmThisWeek =
+    thisWeekResults.reduce((sum, r) => sum + (r.totalDistance ?? 0), 0) / 1000;
 
   // Avg pace this month
   const startOfMonth = new Date();
@@ -114,8 +118,10 @@ export default async function DashboardPage() {
   });
   const monthPaceSeconds =
     monthResults.length > 0
-      ? monthResults.reduce((sum, r) => sum + paceToSeconds(r.avgPace ?? "0:00"), 0) /
-        monthResults.length
+      ? monthResults.reduce(
+          (sum, r) => sum + paceToSeconds(r.avgPace ?? "0:00"),
+          0
+        ) / monthResults.length
       : null;
 
   // Total completed workouts
@@ -125,7 +131,6 @@ export default async function DashboardPage() {
 
   // ─── Build chart data (last 8 weeks) ───────────────────────────────────────
 
-  // Group by week key
   const weekMap = new Map<
     string,
     { km: number; paceSum: number; paceCount: number }
@@ -142,28 +147,26 @@ export default async function DashboardPage() {
     weekMap.set(key, existing);
   }
 
-  // Build last 8 Monday-anchored week keys (oldest → newest)
-  const weekLabels: string[] = [];
+  // Build last 8 Sunday-anchored week keys (oldest → newest)
+  const weekKeys: string[] = [];
   for (let i = 7; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i * 7);
-    weekLabels.push(weekKey(d));
+    weekKeys.push(weekKey(d));
   }
 
-  const volumeData: WeeklyVolumePoint[] = weekLabels.map((key) => ({
-    week: weekLabel(key),
+  const weeklyData: WeeklyNavPoint[] = weekKeys.map((key) => ({
+    label: weekRangeLabel(key),
     km: parseFloat((weekMap.get(key)?.km ?? 0).toFixed(1)),
   }));
 
-  const paceData: PaceTrendPoint[] = weekLabels
+  const paceData: PaceTrendPoint[] = weekKeys
     .map((key) => {
       const w = weekMap.get(key);
       return {
-        week: weekLabel(key),
+        week: weekShortLabel(key),
         paceSeconds:
-          w && w.paceCount > 0
-            ? Math.round(w.paceSum / w.paceCount)
-            : 0,
+          w && w.paceCount > 0 ? Math.round(w.paceSum / w.paceCount) : 0,
       };
     })
     .filter((p) => p.paceSeconds > 0);
@@ -220,7 +223,11 @@ export default async function DashboardPage() {
       </div>
 
       {/* Charts */}
-      <DashboardCharts volumeData={volumeData} paceData={paceData} />
+      <DashboardCharts
+        weeklyData={weeklyData}
+        initialWeekIndex={weeklyData.length - 1}
+        paceData={paceData}
+      />
 
       {/* Recent workouts table */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4">

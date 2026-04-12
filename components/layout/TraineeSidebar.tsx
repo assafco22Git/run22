@@ -8,6 +8,7 @@ import {
   Trophy,
   Settings,
   LogOut,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -30,6 +31,11 @@ const navItems = [
     icon: Trophy,
   },
   {
+    label: "Leaderboard",
+    href: "/leaderboard",
+    icon: BarChart3,
+  },
+  {
     label: "Settings",
     href: "/settings",
     icon: Settings,
@@ -50,10 +56,10 @@ export function TraineeSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 px-4 py-6 shrink-0">
+    <aside className="hidden lg:flex flex-col w-64 h-screen sticky top-0 overflow-hidden bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 px-4 py-6 shrink-0">
       {/* Brand */}
       <div className="flex items-center mb-8 px-2">
-        <Run22Logo size="md" />
+        <Run22Logo size="lg" />
       </div>
 
       {/* Nav */}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, LayoutDashboard, Trophy, Settings } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Trophy, Settings, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -20,6 +20,11 @@ const navItems = [
     label: "Races",
     href: "/races",
     icon: Trophy,
+  },
+  {
+    label: "Leaders",
+    href: "/leaderboard",
+    icon: BarChart3,
   },
   {
     label: "Settings",
