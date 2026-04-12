@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -16,30 +15,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  // Validate file type
   if (!file.type.startsWith("image/")) {
     return NextResponse.json({ error: "File must be an image" }, { status: 400 });
   }
 
-  // Validate file size (2 MB max)
-  if (file.size > 2 * 1024 * 1024) {
-    return NextResponse.json({ error: "Image must be under 2 MB" }, { status: 400 });
+  // 3 MB raw limit (client already resizes to ~256px so this is very safe)
+  if (file.size > 3 * 1024 * 1024) {
+    return NextResponse.json({ error: "Image must be under 3 MB" }, { status: 400 });
   }
 
-  // Upload to Vercel Blob
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const filename = `avatars/${session.user.id}.${ext}`;
+  const bytes = await file.arrayBuffer();
+  const base64 = Buffer.from(bytes).toString("base64");
+  const dataUrl = `data:${file.type};base64,${base64}`;
 
-  const blob = await put(filename, file, {
-    access: "public",
-    addRandomSuffix: false, // overwrite same path = always latest avatar
-  });
-
-  // Save URL to user record
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { image: blob.url },
+    data: { image: dataUrl },
   });
 
-  return NextResponse.json({ url: blob.url });
+  return NextResponse.json({ url: dataUrl });
 }

@@ -1,15 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        // Vercel Blob storage
-        protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
-      },
-    ],
-  },
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
