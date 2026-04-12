@@ -8,20 +8,22 @@ import { DashboardCharts } from "@/components/charts/DashboardCharts";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Returns ISO week number for a Date */
-function getISOWeek(date: Date): number {
+/**
+ * Returns a Sunday-anchored week key: "YYYY-MM-DD" of the Sunday that starts
+ * the week containing `date`. Using a real date as key avoids ISO-week
+ * boundary quirks and always aligns with the app's Sunday-first calendar.
+ */
+function weekKey(date: Date): string {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-  const yearStart = new Date(d.getFullYear(), 0, 1);
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  d.setDate(d.getDate() - d.getDay()); // rewind to Sunday
+  return d.toISOString().slice(0, 10);  // "YYYY-MM-DD"
 }
 
-/** Returns "YYYY-WNN" key */
-function weekKey(date: Date): string {
-  const year = date.getFullYear();
-  const week = getISOWeek(date);
-  return `${year}-W${week.toString().padStart(2, "0")}`;
+/** Short label for the chart, e.g. "Apr 6" */
+function weekLabel(sundayKey: string): string {
+  const d = new Date(sundayKey + "T12:00:00Z");
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -69,10 +71,11 @@ export default async function DashboardPage() {
     0
   );
 
-  // Workouts this week
+  // This week boundaries (Sunday = start)
   const startOfWeek = new Date();
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
+
   const workoutsThisWeek = await prisma.workout.count({
     where: {
       traineeId: traineeProfile.id,
@@ -80,6 +83,19 @@ export default async function DashboardPage() {
       scheduledAt: { gte: startOfWeek },
     },
   });
+
+  // km logged this week (results whose workout is scheduled this week)
+  const thisWeekResults = await prisma.workoutResult.findMany({
+    where: {
+      traineeId: traineeProfile.id,
+      workout: { scheduledAt: { gte: startOfWeek } },
+    },
+    select: { totalDistance: true },
+  });
+  const kmThisWeek = thisWeekResults.reduce(
+    (sum, r) => sum + (r.totalDistance ?? 0),
+    0
+  ) / 1000;
 
   // Avg pace this month
   const startOfMonth = new Date();
@@ -123,7 +139,7 @@ export default async function DashboardPage() {
     weekMap.set(key, existing);
   }
 
-  // Build last 8 week labels
+  // Build last 8 Sunday-anchored week keys (oldest → newest)
   const weekLabels: string[] = [];
   for (let i = 7; i >= 0; i--) {
     const d = new Date();
@@ -132,7 +148,7 @@ export default async function DashboardPage() {
   }
 
   const volumeData: WeeklyVolumePoint[] = weekLabels.map((key) => ({
-    week: "W" + key.split("-W")[1],
+    week: weekLabel(key),
     km: parseFloat((weekMap.get(key)?.km ?? 0).toFixed(1)),
   }));
 
@@ -140,7 +156,7 @@ export default async function DashboardPage() {
     .map((key) => {
       const w = weekMap.get(key);
       return {
-        week: "W" + key.split("-W")[1],
+        week: weekLabel(key),
         paceSeconds:
           w && w.paceCount > 0
             ? Math.round(w.paceSum / w.paceCount)
@@ -154,8 +170,8 @@ export default async function DashboardPage() {
 
   const stats = [
     {
-      label: "Total km (all time)",
-      value: (totalKmAllTime / 1000).toFixed(1) + " km",
+      label: "km this week",
+      value: kmThisWeek > 0 ? kmThisWeek.toFixed(1) + " km" : "—",
     },
     {
       label: "Workouts this week",
@@ -166,8 +182,8 @@ export default async function DashboardPage() {
       value: monthPaceSeconds ? secondsToMMSS(monthPaceSeconds) + " /km" : "—",
     },
     {
-      label: "Completed workouts",
-      value: totalCompleted.toString(),
+      label: "Total km (all time)",
+      value: (totalKmAllTime / 1000).toFixed(1) + " km",
     },
   ];
 

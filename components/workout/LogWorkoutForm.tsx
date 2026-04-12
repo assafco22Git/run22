@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { logWorkoutResult, updateWorkoutResult } from "@/app/actions/results";
 import { mmssToSeconds, secondsToMMSS, pacePerKm } from "@/lib/pace";
@@ -51,7 +51,7 @@ export function LogWorkoutForm({
   initial,
 }: LogWorkoutFormProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Overall stats — seed from initial values when editing
@@ -85,7 +85,7 @@ export function LogWorkoutForm({
     });
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -120,17 +120,16 @@ export function LogWorkoutForm({
       segmentResults: segmentResultsData,
     };
 
-    startTransition(async () => {
-      const action = mode === "edit" ? updateWorkoutResult : logWorkoutResult;
-      const result = await action(workoutId, payload);
+    setIsPending(true);
+    const action = mode === "edit" ? updateWorkoutResult : logWorkoutResult;
+    const result = await action(workoutId, payload);
 
-      if (result.success) {
-        router.push(`/workouts/${workoutId}`);
-        router.refresh();
-      } else {
-        setError(result.error ?? "Failed to save result");
-      }
-    });
+    if (result.success) {
+      router.push(`/workouts/${workoutId}`);
+    } else {
+      setError(result.error ?? "Failed to save result");
+      setIsPending(false);
+    }
   }
 
   return (
