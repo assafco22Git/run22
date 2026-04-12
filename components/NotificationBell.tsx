@@ -25,12 +25,16 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-export function NotificationBell() {
+interface NotificationBellProps {
+  /** "up" opens the panel above the button (use in sidebar footer); "down" opens below (default, use in top bar) */
+  placement?: "up" | "down";
+}
+
+export function NotificationBell({ placement = "down" }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -44,22 +48,15 @@ export function NotificationBell() {
     }
   }, []);
 
-  // Initial fetch + polling every 30s
   useEffect(() => {
     fetchNotifications();
     const id = setInterval(fetchNotifications, 30_000);
     return () => clearInterval(id);
   }, [fetchNotifications]);
 
-  // Close panel on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(e.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     }
@@ -71,7 +68,6 @@ export function NotificationBell() {
     const wasOpen = open;
     setOpen((v) => !v);
 
-    // Mark all as read when opening
     if (!wasOpen && unreadCount > 0) {
       setUnreadCount(0);
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -84,76 +80,101 @@ export function NotificationBell() {
   }
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
+      {/* Bell button */}
       <button
-        ref={buttonRef}
         onClick={handleOpen}
-        className="relative p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+        className={cn(
+          "relative p-2 rounded-xl transition-colors",
+          "text-gray-500 dark:text-gray-400",
+          "hover:bg-gray-100 dark:hover:bg-gray-800",
+          "hover:text-gray-900 dark:hover:text-gray-100",
+          open && "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+        )}
         aria-label="Notifications"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+          <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
+      {/* Panel */}
       {open && (
         <div
-          ref={panelRef}
-          className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 overflow-hidden"
+          className={cn(
+            "absolute right-0 z-[100] w-80",
+            "bg-white dark:bg-gray-900",
+            "border border-gray-200 dark:border-gray-700",
+            "rounded-2xl shadow-2xl shadow-black/10 dark:shadow-black/40",
+            "overflow-hidden",
+            placement === "up" ? "bottom-full mb-2" : "top-full mt-2"
+          )}
         >
+          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Notifications
-            </h3>
-            {notifications.length > 0 && (
-              <span className="text-xs text-gray-400">{notifications.length} total</span>
-            )}
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Notifications
+              </h3>
+              {unreadCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+          {/* List */}
+          <div className="max-h-[360px] overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
-                No notifications yet
+              <div className="flex flex-col items-center justify-center gap-2 py-10 text-gray-400 dark:text-gray-500">
+                <Bell className="w-8 h-8 opacity-30" />
+                <p className="text-sm">All caught up!</p>
               </div>
             ) : (
-              notifications.map((n) => {
-                const inner = (
-                  <div
-                    className={cn(
-                      "px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors",
-                      !n.read && "bg-emerald-50/60 dark:bg-emerald-950/20"
-                    )}
-                  >
-                    <div className="flex items-start gap-2">
-                      {!n.read && (
-                        <span className="mt-1.5 w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {notifications.map((n) => {
+                  const row = (
+                    <div
+                      className={cn(
+                        "flex items-start gap-3 px-4 py-3 transition-colors",
+                        "hover:bg-gray-50 dark:hover:bg-gray-800/60",
+                        !n.read && "bg-emerald-50/50 dark:bg-emerald-950/20"
                       )}
-                      <div className={cn("min-w-0", n.read && "pl-4")}>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    >
+                      {/* Unread dot — always takes space so text stays aligned */}
+                      <span
+                        className={cn(
+                          "mt-1.5 w-2 h-2 rounded-full shrink-0 transition-opacity",
+                          n.read ? "opacity-0" : "bg-emerald-500 opacity-100"
+                        )}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug">
                           {n.title}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug line-clamp-2">
                           {n.body}
                         </p>
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
                           {timeAgo(n.createdAt)}
                         </p>
                       </div>
                     </div>
-                  </div>
-                );
+                  );
 
-                return n.href ? (
-                  <Link key={n.id} href={n.href} onClick={() => setOpen(false)}>
-                    {inner}
-                  </Link>
-                ) : (
-                  <div key={n.id}>{inner}</div>
-                );
-              })
+                  return n.href ? (
+                    <Link key={n.id} href={n.href} onClick={() => setOpen(false)}>
+                      {row}
+                    </Link>
+                  ) : (
+                    <div key={n.id}>{row}</div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>

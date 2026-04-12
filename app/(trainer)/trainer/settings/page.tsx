@@ -9,7 +9,7 @@ export default async function TrainerSettingsPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, username: true, image: true },
+    select: { name: true, username: true, image: true },
   });
 
   const trainerProfile = await prisma.trainerProfile.findUnique({
@@ -34,7 +34,6 @@ export default async function TrainerSettingsPage() {
 
         <TrainerCredentialsForm
           initialName={user?.name ?? ""}
-          initialEmail={user?.email ?? ""}
           initialUsername={user?.username}
         />
       </div>

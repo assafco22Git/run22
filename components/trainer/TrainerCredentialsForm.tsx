@@ -7,7 +7,6 @@ import { toast } from "sonner";
 
 interface TrainerCredentialsFormProps {
   initialName: string;
-  initialEmail: string;
   initialUsername?: string | null;
 }
 
@@ -30,13 +29,11 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 
 export function TrainerCredentialsForm({
   initialName,
-  initialEmail,
   initialUsername,
 }: TrainerCredentialsFormProps) {
   const [isPending, startTransition] = useTransition();
 
   const [name, setName] = useState(initialName);
-  const [email, setEmail] = useState(initialEmail);
   const [username, setUsername] = useState(initialUsername ?? "");
   const [newPassword, setNewPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -47,7 +44,6 @@ export function TrainerCredentialsForm({
     startTransition(async () => {
       const result = await updateTrainerCredentials({
         name: name.trim(),
-        email: email.trim() || undefined,
         username: username.trim() || undefined,
         newPassword: newPassword || undefined,
       });
@@ -78,17 +74,6 @@ export function TrainerCredentialsForm({
         <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider pt-1">
           Login credentials
         </p>
-
-        <div>
-          <FieldLabel>Email address</FieldLabel>
-          <TextInput
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            autoComplete="off"
-          />
-        </div>
 
         <div>
           <FieldLabel>Username</FieldLabel>

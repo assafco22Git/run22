@@ -18,14 +18,13 @@ export default async function TrainerLayout({
   const session = await requireTrainer();
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, image: true },
+    select: { name: true, image: true },
   });
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       <TrainerSidebar
         userName={user?.name ?? "Trainer"}
-        userEmail={user?.email}
         userImage={user?.image}
         logoutAction={logoutAction}
       />

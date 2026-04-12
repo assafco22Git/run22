@@ -14,7 +14,7 @@ export default async function SettingsPage({
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, email: true, image: true, stravaId: true },
+    select: { id: true, name: true, image: true, stravaId: true },
   });
 
   const isStravaConnected = !!user?.stravaId;
@@ -59,12 +59,6 @@ export default async function SettingsPage({
               required
               className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
-            <div className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-500 dark:text-gray-400">
-              {user?.email}
-            </div>
           </div>
           <button
             type="submit"
