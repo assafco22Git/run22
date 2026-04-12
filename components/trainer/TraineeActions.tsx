@@ -9,6 +9,7 @@ import { removeTrainee, updateTraineeDetails } from "@/app/actions/trainees";
 interface TraineeActionsProps {
   traineeId: string;
   initialName: string;
+  initialEmail?: string | null;
   initialUsername?: string | null;
   initialDob?: string | null;   // "YYYY-MM-DD"
   initialGender?: string | null;
@@ -34,6 +35,7 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export function TraineeActions({
   traineeId,
   initialName,
+  initialEmail,
   initialUsername,
   initialDob,
   initialGender,
@@ -43,6 +45,7 @@ export function TraineeActions({
 
   // Form state
   const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [username, setUsername] = useState(initialUsername ?? "");
   const [dob, setDob] = useState(initialDob ?? "");
   const [gender, setGender] = useState(initialGender ?? "");
@@ -53,6 +56,7 @@ export function TraineeActions({
 
   function resetForm() {
     setName(initialName);
+    setEmail(initialEmail ?? "");
     setUsername(initialUsername ?? "");
     setDob(initialDob ?? "");
     setGender(initialGender ?? "");
@@ -65,6 +69,7 @@ export function TraineeActions({
     startTransition(async () => {
       const result = await updateTraineeDetails(traineeId, {
         name: name.trim(),
+        email: email.trim() || undefined,
         username: username.trim() || undefined,
         dob: dob || undefined,
         gender: gender || undefined,
@@ -152,6 +157,16 @@ export function TraineeActions({
         <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
           Login credentials
         </p>
+        <div>
+          <FieldLabel>Email address</FieldLabel>
+          <TextInput
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="e.g. alice@example.com"
+            autoComplete="off"
+          />
+        </div>
         <div>
           <FieldLabel>Username</FieldLabel>
           <TextInput

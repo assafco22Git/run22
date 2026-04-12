@@ -6,12 +6,12 @@ import {
   LayoutDashboard,
   Users,
   Plus,
-  Activity,
   LogOut,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Run22Logo } from "@/components/Run22Logo";
 
 const navItems = [
   {
@@ -52,13 +52,8 @@ export function TrainerSidebar({
   return (
     <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 px-4 py-6 shrink-0">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 mb-8 px-2">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500">
-          <Activity className="w-4 h-4 text-white" />
-        </div>
-        <span className="font-bold text-gray-900 dark:text-gray-100">
-          TrainTrack
-        </span>
+      <div className="flex items-center mb-8 px-2">
+        <Run22Logo size="md" />
       </div>
 
       {/* Nav */}

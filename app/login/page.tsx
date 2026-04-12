@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
-import { Activity } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { Run22Logo } from "@/components/Run22Logo";
 
 // Server Action for login
 async function loginAction(formData: FormData) {
@@ -16,7 +16,7 @@ async function loginAction(formData: FormData) {
   let redirectTo = "/calendar";
   try {
     const user = await prisma.user.findFirst({
-      where: { OR: [{ name: username }, { email: username }] },
+      where: { OR: [{ username }, { name: username }, { email: username }] },
       select: { role: true, passwordHash: true },
     });
     if (user?.passwordHash && await bcrypt.compare(password, user.passwordHash)) {
@@ -48,12 +48,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="w-full max-w-sm">
         {/* Logo / Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500 mb-4 shadow-lg">
-            <Activity className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            TrainTrack
-          </h1>
+          <Run22Logo size="lg" className="mb-3" />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Running & fitness platform
           </p>
@@ -121,7 +116,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-6">
-          &copy; {new Date().getFullYear()} TrainTrack
+          &copy; {new Date().getFullYear()} run22
         </p>
       </div>
     </div>

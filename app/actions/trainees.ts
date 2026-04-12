@@ -185,6 +185,7 @@ export async function updateTraineeDetails(
     dob?: string;
     gender?: string;
     username?: string;
+    email?: string;
     newPassword?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
@@ -204,6 +205,18 @@ export async function updateTraineeDetails(
   const name = data.name.trim();
   if (!name) return { success: false, error: "Name is required" };
 
+  // Validate new email if provided
+  if (data.email) {
+    const newEmail = data.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail))
+      return { success: false, error: "Invalid email address" };
+
+    // Check not taken by another user
+    const conflict = await prisma.user.findUnique({ where: { email: newEmail } });
+    if (conflict && conflict.id !== traineeProfile.userId)
+      return { success: false, error: "That email address is already in use" };
+  }
+
   // Validate new username if provided
   if (data.username) {
     const newUsername = data.username.trim().toLowerCase();
@@ -221,7 +234,8 @@ export async function updateTraineeDetails(
     return { success: false, error: "Password must be at least 6 characters" };
 
   // Build user update payload
-  const userUpdate: { name: string; username?: string; passwordHash?: string } = { name };
+  const userUpdate: { name: string; email?: string; username?: string; passwordHash?: string } = { name };
+  if (data.email) userUpdate.email = data.email.trim().toLowerCase();
   if (data.username) userUpdate.username = data.username.trim().toLowerCase();
   if (data.newPassword) userUpdate.passwordHash = await bcrypt.hash(data.newPassword, 12);
 
