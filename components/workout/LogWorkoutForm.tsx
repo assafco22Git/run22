@@ -37,7 +37,6 @@ export function LogWorkoutForm({ workoutId, segments }: LogWorkoutFormProps) {
 
   // Overall stats
   const [distanceKm, setDistanceKm] = useState("");
-  const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("0");
   const [secs, setSecs] = useState("0");
   const [avgHr, setAvgHr] = useState("");
@@ -73,7 +72,6 @@ export function LogWorkoutForm({ workoutId, segments }: LogWorkoutFormProps) {
     setError(null);
 
     const totalDurationSecs =
-      (parseInt(hours) || 0) * 3600 +
       (parseInt(minutes) || 0) * 60 +
       (parseInt(secs) || 0);
     const distMeters = distanceKm ? parseFloat(distanceKm) * 1000 : undefined;
@@ -160,8 +158,7 @@ export function LogWorkoutForm({ workoutId, segments }: LogWorkoutFormProps) {
           </label>
           <div className="flex items-center gap-2">
             {[
-              { label: "h", value: hours, setter: setHours, max: 23 },
-              { label: "m", value: minutes, setter: setMinutes, max: 59 },
+              { label: "m", value: minutes, setter: setMinutes, max: 999 },
               { label: "s", value: secs, setter: setSecs, max: 59 },
             ].map(({ label, value, setter, max }) => (
               <div key={label} className="flex items-center gap-1">
@@ -296,7 +293,7 @@ export function LogWorkoutForm({ workoutId, segments }: LogWorkoutFormProps) {
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    Segment {seg.order}
+                    Segment {idx + 1}
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     Target: {seg.distance.toFixed(2)} km @ {seg.pace} /km

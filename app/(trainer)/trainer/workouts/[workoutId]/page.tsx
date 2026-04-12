@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Heart, Zap, FileText, Pencil } from "lucide-react";
 import type { WorkoutStatus } from "@/types";
+import { DeleteWorkoutButton } from "@/components/DeleteWorkoutButton";
 
 function statusBadge(status: string) {
   const s = status as WorkoutStatus;
@@ -98,14 +99,19 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
             </p>
           </div>
 
-          {workout.status === "PENDING" && (
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
-                <Pencil className="w-3.5 h-3.5" />
-                Editing coming soon
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/trainer/workouts/${workoutId}/edit`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </Link>
+            <DeleteWorkoutButton
+              workoutId={workoutId}
+              redirectTo={`/trainer/trainees/${traineeId}`}
+            />
+          </div>
         </div>
 
         {workout.description && (

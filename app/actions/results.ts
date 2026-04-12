@@ -64,38 +64,38 @@ export async function logWorkoutResult(
     segmentResults,
   } = parsed.data;
 
-  // Get trainee profile
-  const traineeProfile = await prisma.traineeProfile.findUnique({
-    where: { userId: session.user.id },
-  });
-
-  if (!traineeProfile) {
-    return { success: false, error: "Trainee profile not found" };
-  }
-
-  // Verify the workout belongs to this trainee and is still PENDING
-  const workout = await prisma.workout.findUnique({
-    where: { id: workoutId },
-    select: { id: true, traineeId: true, status: true },
-  });
-
-  if (!workout || workout.traineeId !== traineeProfile.id) {
-    return { success: false, error: "Workout not found" };
-  }
-
-  if (workout.status !== "PENDING") {
-    return { success: false, error: "Workout has already been logged" };
-  }
-
-  // Check if result already exists
-  const existing = await prisma.workoutResult.findUnique({
-    where: { workoutId },
-  });
-  if (existing) {
-    return { success: false, error: "Result already logged for this workout" };
-  }
-
   try {
+    // Get trainee profile
+    const traineeProfile = await prisma.traineeProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!traineeProfile) {
+      return { success: false, error: "Trainee profile not found" };
+    }
+
+    // Verify the workout belongs to this trainee and is still PENDING
+    const workout = await prisma.workout.findUnique({
+      where: { id: workoutId },
+      select: { id: true, traineeId: true, status: true },
+    });
+
+    if (!workout || workout.traineeId !== traineeProfile.id) {
+      return { success: false, error: "Workout not found" };
+    }
+
+    if (workout.status !== "PENDING") {
+      return { success: false, error: "Workout has already been logged" };
+    }
+
+    // Check if result already exists
+    const existing = await prisma.workoutResult.findUnique({
+      where: { workoutId },
+    });
+    if (existing) {
+      return { success: false, error: "Result already logged for this workout" };
+    }
+
     // Create result (no transactions — Neon HTTP doesn't support them)
     const result = await prisma.workoutResult.create({
       data: {
@@ -137,6 +137,6 @@ export async function logWorkoutResult(
     return { success: true };
   } catch (e) {
     console.error("logWorkoutResult error:", e);
-    return { success: false, error: "Failed to log workout result" };
+    return { success: false, error: "Failed to log workout result. Please try again." };
   }
 }

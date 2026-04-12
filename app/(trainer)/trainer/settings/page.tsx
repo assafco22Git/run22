@@ -1,14 +1,14 @@
 import { requireTrainer } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { BioForm } from "@/components/trainer/BioForm";
-import { updateName } from "@/app/actions/profile";
+import { TrainerCredentialsForm } from "@/components/trainer/TrainerCredentialsForm";
 
 export default async function TrainerSettingsPage() {
   const session = await requireTrainer();
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true },
+    select: { name: true, email: true, username: true },
   });
 
   const trainerProfile = await prisma.trainerProfile.findUnique({
@@ -22,34 +22,17 @@ export default async function TrainerSettingsPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your trainer profile</p>
       </div>
 
-      {/* Profile — editable */}
+      {/* Account & credentials */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 mb-5">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Account</h2>
-        <form action={updateName} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Name</label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              defaultValue={user?.name ?? ""}
-              required
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Email</label>
-            <div className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-500 dark:text-gray-400">
-              {user?.email}
-            </div>
-          </div>
-          <button type="submit" className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors">
-            Save changes
-          </button>
-        </form>
+        <TrainerCredentialsForm
+          initialName={user?.name ?? ""}
+          initialEmail={user?.email ?? ""}
+          initialUsername={user?.username}
+        />
       </div>
 
-      {/* Bio — editable */}
+      {/* Bio */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">Bio</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Visible to your trainees.</p>

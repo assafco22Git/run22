@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration, secondsToMMSS } from "@/lib/pace";
 import type { WorkoutStatus } from "@/types";
+import { DeleteWorkoutButton } from "@/components/DeleteWorkoutButton";
 
 interface WorkoutDetailPageProps {
   params: Promise<{ workoutId: string }>;
@@ -68,7 +69,10 @@ export default async function WorkoutDetailPage({
             })}
           </p>
         </div>
-        <div className="shrink-0 mt-1">{statusBadge(status)}</div>
+        <div className="shrink-0 mt-1 flex items-center gap-2">
+          {statusBadge(status)}
+          <DeleteWorkoutButton workoutId={workoutId} redirectTo="/calendar" />
+        </div>
       </div>
 
       {/* Description */}
@@ -105,10 +109,10 @@ export default async function WorkoutDetailPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                {workout.segments.map((seg) => (
+                {workout.segments.map((seg, idx) => (
                   <tr key={seg.id}>
                     <td className="py-2.5 text-gray-500 dark:text-gray-400">
-                      {seg.order}
+                      {idx + 1}
                     </td>
                     <td className="py-2.5 text-right text-gray-900 dark:text-gray-100">
                       {seg.distance.toFixed(2)} km
@@ -255,14 +259,14 @@ export default async function WorkoutDetailPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                    {result.segmentResults.map((sr) => {
+                    {result.segmentResults.map((sr, idx) => {
                       const targetSeg = workout.segments.find(
                         (s) => s.id === sr.segmentId
                       );
                       return (
                         <tr key={sr.id}>
                           <td className="py-2.5 text-gray-500 dark:text-gray-400">
-                            {sr.order}
+                            {idx + 1}
                           </td>
                           <td className="py-2.5 text-right text-gray-500 dark:text-gray-400">
                             {targetSeg
