@@ -30,6 +30,82 @@ const logWorkoutResultSchema = z.object({
 
 export type LogWorkoutResultInput = z.infer<typeof logWorkoutResultSchema>;
 
+// ─── Update result ────────────────────────────────────────────────────────────
+
+export async function updateWorkoutResult(
+  workoutId: string,
+  data: LogWorkoutResultInput
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  if ((session.user.role as Role) !== "TRAINEE")
+    return { success: false, error: "Unauthorized" };
+
+  const parsed = logWorkoutResultSchema.safeParse(data);
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Validation error" };
+
+  const {
+    totalDistance, totalDuration, avgPace,
+    avgHeartRate, maxHeartRate, notes,
+    perceivedEffort, rating, segmentResults,
+  } = parsed.data;
+
+  try {
+    const traineeProfile = await prisma.traineeProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+    if (!traineeProfile) return { success: false, error: "Trainee profile not found" };
+
+    const workout = await prisma.workout.findUnique({
+      where: { id: workoutId },
+      select: { id: true, traineeId: true },
+    });
+    if (!workout || workout.traineeId !== traineeProfile.id)
+      return { success: false, error: "Workout not found" };
+
+    const existing = await prisma.workoutResult.findUnique({ where: { workoutId } });
+    if (!existing) return { success: false, error: "No logged result found to edit" };
+
+    // Update result fields
+    await prisma.workoutResult.update({
+      where: { id: existing.id },
+      data: {
+        totalDistance: totalDistance ?? null,
+        totalDuration: totalDuration ?? null,
+        avgPace: avgPace ?? null,
+        avgHeartRate: avgHeartRate ?? null,
+        maxHeartRate: maxHeartRate ?? null,
+        notes: notes ?? null,
+        perceivedEffort: perceivedEffort ?? null,
+        rating: rating ?? null,
+      },
+    });
+
+    // Replace segment results: delete old ones, recreate one-by-one
+    await prisma.workoutSegmentResult.deleteMany({ where: { resultId: existing.id } });
+    if (segmentResults && segmentResults.length > 0) {
+      for (const sr of segmentResults) {
+        await prisma.workoutSegmentResult.create({
+          data: {
+            resultId: existing.id,
+            segmentId: sr.segmentId,
+            order: sr.order,
+            distance: sr.distance ?? null,
+            duration: sr.duration ?? null,
+            pace: sr.pace ?? null,
+          },
+        });
+      }
+    }
+
+    return { success: true };
+  } catch (e) {
+    console.error("updateWorkoutResult error:", e);
+    return { success: false, error: "Failed to update result. Please try again." };
+  }
+}
+
 // ─── Action ──────────────────────────────────────────────────────────────────
 
 export async function logWorkoutResult(

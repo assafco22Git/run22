@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDuration, secondsToMMSS } from "@/lib/pace";
 import type { WorkoutStatus } from "@/types";
 import { DeleteWorkoutButton } from "@/components/DeleteWorkoutButton";
+import { Pencil } from "lucide-react";
 
 interface WorkoutDetailPageProps {
   params: Promise<{ workoutId: string }>;
@@ -148,9 +149,18 @@ export default async function WorkoutDetailPage({
 
       {result && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4 mb-4">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-            Logged Result
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Logged Result
+            </h2>
+            <Link
+              href={`/workouts/${workoutId}/log/edit`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Pencil className="w-3 h-3" />
+              Edit result
+            </Link>
+          </div>
 
           {/* Summary stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
