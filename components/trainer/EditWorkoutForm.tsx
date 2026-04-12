@@ -4,7 +4,7 @@ import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import { updateWorkout } from "@/app/actions/workouts";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -124,7 +124,6 @@ export function EditWorkoutForm({
   workoutId, traineeId, initialTitle, initialDescription, initialScheduledAt, initialSegments,
 }: EditWorkoutFormProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
   const [title, setTitle] = useState(initialTitle);
@@ -164,10 +163,10 @@ export function EditWorkoutForm({
 
     for (const seg of segments) {
       if (!seg.distance || isNaN(parseFloat(seg.distance))) {
-        toast({ title: "All segments need a valid distance", variant: "destructive" }); return;
+        toast.error("All segments need a valid distance"); return;
       }
       if (!/^\d+:\d{2}$/.test(seg.pace)) {
-        toast({ title: "Pace must be in mm:ss format (e.g. 5:30)", variant: "destructive" }); return;
+        toast.error("Pace must be in mm:ss format (e.g. 5:30)"); return;
       }
     }
 
@@ -184,11 +183,11 @@ export function EditWorkoutForm({
       });
 
       if (result.success) {
-        toast({ title: "Workout updated" });
+        toast.success("Workout updated");
         router.push(`/trainer/workouts/${workoutId}`);
         router.refresh();
       } else {
-        toast({ title: result.error ?? "Failed to update workout", variant: "destructive" });
+        toast.error(result.error ?? "Failed to update workout");
       }
     });
   }

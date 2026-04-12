@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { updateTrainerCredentials } from "@/app/actions/profile";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface TrainerCredentialsFormProps {
   initialName: string;
@@ -35,7 +35,6 @@ export function TrainerCredentialsForm({
   initialUsername,
 }: TrainerCredentialsFormProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
   const [name, setName] = useState(initialName);
@@ -45,7 +44,7 @@ export function TrainerCredentialsForm({
   const [showPw, setShowPw] = useState(false);
 
   function handleSave() {
-    if (!name.trim()) { toast({ title: "Name is required", variant: "destructive" }); return; }
+    if (!name.trim()) { toast.error("Name is required"); return; }
 
     startTransition(async () => {
       const result = await updateTrainerCredentials({
@@ -56,11 +55,11 @@ export function TrainerCredentialsForm({
       });
 
       if (result.success) {
-        toast({ title: "Settings saved" });
+        toast.success("Settings saved");
         setNewPassword("");
         router.refresh();
       } else {
-        toast({ title: result.error ?? "Failed to save", variant: "destructive" });
+        toast.error(result.error ?? "Failed to save");
       }
     });
   }
