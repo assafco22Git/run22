@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { syncStravaActivities } from "@/lib/strava";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -51,6 +52,9 @@ export async function GET(req: Request) {
       stravaTokenExpiry: new Date(token.expires_at * 1000),
     },
   });
+
+  // Kick off an initial sync in the background (don't await — keep redirect fast)
+  syncStravaActivities(session.user.id, 50).catch(() => {});
 
   return NextResponse.redirect(new URL("/settings?success=strava_connected", base));
 }

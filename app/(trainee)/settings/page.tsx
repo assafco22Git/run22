@@ -1,6 +1,7 @@
 import { requireTrainee } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { updateName } from "@/app/actions/profile";
+import { StravaSyncButton } from "@/components/StravaSyncButton";
 
 export default async function SettingsPage({
   searchParams,
@@ -95,8 +96,9 @@ export default async function SettingsPage({
               Connected · Strava ID {user?.stravaId}
             </span>
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              Your Strava account is linked. Activities can be synced to your workouts.
+              Your Strava account is linked. Run activities are matched to your scheduled workouts within ±1 day.
             </p>
+            <StravaSyncButton />
             <a
               href="/api/strava/disconnect"
               className="block w-fit px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
