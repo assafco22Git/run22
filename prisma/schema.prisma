@@ -81,11 +81,23 @@ model TraineeProfile {
   dob    DateTime?
   gender String?
 
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trainers TrainerTrainee[]
-  workouts Workout[]
-  results  WorkoutResult[]
-  races    Race[]
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainers    TrainerTrainee[]
+  workouts    Workout[]
+  results     WorkoutResult[]
+  races       Race[]
+  preferences TraineePreference?
+}
+
+model TraineePreference {
+  id        String   @id @default(cuid())
+  traineeId String   @unique
+  // JSON: [{day:0,enabled:true,time:"any"}, ...] day 0=Sun..6=Sat
+  days      String   @default("[]")
+  notes     String?
+  updatedAt DateTime @updatedAt
+
+  trainee TraineeProfile @relation(fields: [traineeId], references: [id], onDelete: Cascade)
 }
 
 model TrainerTrainee {

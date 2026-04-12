@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   BarChart3,
+  ClipboardList,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,11 @@ const navItems = [
     label: "Races",
     href: "/races",
     icon: Trophy,
+  },
+  {
+    label: "My Plan",
+    href: "/plan",
+    icon: ClipboardList,
   },
   {
     label: "Leaderboard",

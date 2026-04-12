@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronUp, ChevronDown, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, ArrowLeft, AlertTriangle, Info } from "lucide-react";
 import Link from "next/link";
 import { createWorkout } from "@/app/actions/workouts";
 import { cn } from "@/lib/utils";
+import type { DayPref } from "@/app/actions/preferences";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -211,6 +212,11 @@ export default function NewWorkoutPage() {
   const searchParams = useSearchParams();
   const preselectedTraineeId = searchParams.get("traineeId") ?? "";
 
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const TIME_LABELS: Record<string, string> = {
+    any: "Any time", morning: "Morning 🌅", afternoon: "Afternoon ☀️", evening: "Evening 🌙",
+  };
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [traineeId, setTraineeId] = useState(preselectedTraineeId);
@@ -220,13 +226,17 @@ export default function NewWorkoutPage() {
   const [loadingTrainees, setLoadingTrainees] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Trainee preferences
+  const [prefDays, setPrefDays] = useState<DayPref[]>([]);
+  const [prefNotes, setPrefNotes] = useState<string | null>(null);
+  const [loadingPrefs, setLoadingPrefs] = useState(false);
+
   // Fetch trainees
   useEffect(() => {
     fetch("/api/trainer/trainees")
       .then((r) => r.json())
       .then((data) => {
         setTrainees(data.trainees ?? []);
-        // Auto-select if only one trainee and none preselected
         if (!preselectedTraineeId && data.trainees?.length === 1) {
           setTraineeId(data.trainees[0].id);
         }
@@ -234,6 +244,24 @@ export default function NewWorkoutPage() {
       .catch(() => toast.error("Failed to load trainees"))
       .finally(() => setLoadingTrainees(false));
   }, [preselectedTraineeId]);
+
+  // Fetch preferences when trainee changes
+  useEffect(() => {
+    if (!traineeId) { setPrefDays([]); setPrefNotes(null); return; }
+    setLoadingPrefs(true);
+    fetch(`/api/trainer/trainee-preferences?traineeId=${traineeId}`)
+      .then((r) => r.json())
+      .then((data) => { setPrefDays(data.days ?? []); setPrefNotes(data.notes ?? null); })
+      .catch(() => {})
+      .finally(() => setLoadingPrefs(false));
+  }, [traineeId]);
+
+  // Derive allowed days from preferences
+  const hasPrefs = prefDays.length > 0;
+  const enabledDays = prefDays.filter((d) => d.enabled).map((d) => d.day); // 0=Sun..6=Sat
+  const selectedDayOfWeek = scheduledAt ? new Date(scheduledAt + "T12:00:00").getDay() : null;
+  const selectedDayBlocked =
+    hasPrefs && selectedDayOfWeek !== null && !enabledDays.includes(selectedDayOfWeek);
 
   const updateSegment = useCallback(
     (id: string, field: keyof Omit<Segment, "id">, value: string) => {
@@ -263,9 +291,11 @@ export default function NewWorkoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Client-side validation
-    if (!traineeId) {
-      toast.error("Please select a trainee");
+    if (!traineeId) { toast.error("Please select a trainee"); return; }
+
+    // Block if day is restricted by trainee preferences
+    if (selectedDayBlocked) {
+      toast.error(`${DAY_NAMES[selectedDayOfWeek!]} is not an available day for this trainee`);
       return;
     }
 
@@ -354,37 +384,92 @@ export default function NewWorkoutPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <FieldLabel htmlFor="traineeId">Trainee *</FieldLabel>
-              <Select
-                id="traineeId"
-                required
-                value={traineeId}
-                onChange={(e) => setTraineeId(e.target.value)}
-                disabled={loadingTrainees}
-              >
-                <option value="">
-                  {loadingTrainees ? "Loading…" : "Select a trainee"}
+          <div>
+            <FieldLabel htmlFor="traineeId">Trainee *</FieldLabel>
+            <Select
+              id="traineeId"
+              required
+              value={traineeId}
+              onChange={(e) => setTraineeId(e.target.value)}
+              disabled={loadingTrainees}
+            >
+              <option value="">
+                {loadingTrainees ? "Loading…" : "Select a trainee"}
+              </option>
+              {trainees.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
-                {trainees.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
+              ))}
+            </Select>
+          </div>
 
-            <div>
-              <FieldLabel htmlFor="scheduledAt">Scheduled Date *</FieldLabel>
-              <Input
-                id="scheduledAt"
-                type="date"
-                required
-                value={scheduledAt}
-                onChange={(e) => setScheduledAt(e.target.value)}
-              />
+          {/* Trainee preferences panel */}
+          {traineeId && !loadingPrefs && hasPrefs && (
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 p-4 space-y-2">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5" /> Trainee&apos;s available days
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {DAY_NAMES.map((name, i) => {
+                  const pref = prefDays.find((d) => d.day === i);
+                  const enabled = pref?.enabled ?? false;
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg text-xs font-medium",
+                        enabled
+                          ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400"
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 line-through"
+                      )}
+                    >
+                      {name}
+                      {enabled && pref?.time && pref.time !== "any" && (
+                        <span className="ml-1 opacity-70">{TIME_LABELS[pref.time]?.split(" ")[0]}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {prefNotes && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                  &quot;{prefNotes}&quot;
+                </p>
+              )}
             </div>
+          )}
+
+          {traineeId && !loadingPrefs && !hasPrefs && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5" /> This trainee has not set any day preferences yet.
+            </p>
+          )}
+
+          <div>
+            <FieldLabel htmlFor="scheduledAt">Scheduled Date *</FieldLabel>
+            <Input
+              id="scheduledAt"
+              type="date"
+              required
+              value={scheduledAt}
+              onChange={(e) => setScheduledAt(e.target.value)}
+              className={selectedDayBlocked ? "border-red-400 dark:border-red-600 focus:ring-red-500" : ""}
+            />
+            {selectedDayBlocked && (
+              <p className="mt-1.5 text-xs text-red-500 dark:text-red-400 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                {DAY_NAMES[selectedDayOfWeek!]} is not an available day for this trainee. Please choose a different date.
+              </p>
+            )}
+            {scheduledAt && !selectedDayBlocked && hasPrefs && selectedDayOfWeek !== null && (() => {
+              const pref = prefDays.find((d) => d.day === selectedDayOfWeek);
+              return pref?.enabled && pref.time !== "any" ? (
+                <p className="mt-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  Trainee prefers {TIME_LABELS[pref.time]?.toLowerCase()} on {DAY_NAMES[selectedDayOfWeek]}s
+                </p>
+              ) : null;
+            })()}
           </div>
         </div>
 
@@ -427,7 +512,7 @@ export default function NewWorkoutPage() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || selectedDayBlocked}
           className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? "Creating…" : "Create Workout"}
