@@ -86,7 +86,7 @@ export default async function TraineesPage() {
                     {trainee.user.name}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {trainee.user.email}
+                    {trainee.user.username ? `@${trainee.user.username}` : "No username"}
                   </p>
                 </div>
 
