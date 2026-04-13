@@ -16,7 +16,7 @@ async function loginAction(formData: FormData) {
   let redirectTo = "/calendar";
   try {
     const user = await prisma.user.findFirst({
-      where: { OR: [{ username }, { name: username }, { email: username }] },
+      where: { OR: [{ username }, { name: username }] },
       select: { role: true, passwordHash: true },
     });
     if (user?.passwordHash && await bcrypt.compare(password, user.passwordHash)) {
@@ -83,7 +83,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 type="text"
                 autoComplete="username"
                 required
-                placeholder="Your name or email"
+                placeholder="Your username or name"
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
               />
             </div>

@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { addTrainee, createTrainee } from "@/app/actions/trainees";
 import {
   ArrowLeft, UserPlus, CheckCircle, AlertCircle, Loader2,
@@ -46,8 +45,7 @@ function StatusBanner({ success, message }: { success: boolean; message: string 
 // ─── Tab: Link existing account ───────────────────────────────────────────────
 
 function LinkExistingTab() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -55,7 +53,7 @@ function LinkExistingTab() {
     e.preventDefault();
     setResult(null);
     startTransition(async () => {
-      const res = await addTrainee(email);
+      const res = await addTrainee(identifier);
       setResult(res);
       if (res.success) {
         setTimeout(() => { window.location.href = "/trainer/trainees"; }, 1500);
@@ -66,16 +64,16 @@ function LinkExistingTab() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-sm text-gray-500 dark:text-gray-400">
-        Enter the email of an existing account with the <strong>Trainee</strong> role to link them to your roster.
+        Enter the username of an existing <strong>Trainee</strong> account to link them to your roster.
       </p>
       <div>
-        <FieldLabel htmlFor="link-email">Trainee email</FieldLabel>
+        <FieldLabel htmlFor="link-identifier">Trainee username</FieldLabel>
         <Input
-          id="link-email"
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="trainee@example.com"
+          id="link-identifier"
+          type="text"
+          value={identifier}
+          onChange={e => setIdentifier(e.target.value)}
+          placeholder="e.g. alice_cohen"
           required
           disabled={isPending || result?.success === true}
         />
@@ -90,7 +88,7 @@ function LinkExistingTab() {
 
       <button
         type="submit"
-        disabled={isPending || !email.trim() || result?.success === true}
+        disabled={isPending || !identifier.trim() || result?.success === true}
         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 dark:disabled:bg-emerald-800 text-white text-sm font-medium transition-colors disabled:cursor-not-allowed"
       >
         {isPending ? <><Loader2 className="w-4 h-4 animate-spin" />Linking…</> : <><Link2 className="w-4 h-4" />Link Trainee</>}
@@ -102,10 +100,8 @@ function LinkExistingTab() {
 // ─── Tab: Create new account ──────────────────────────────────────────────────
 
 function CreateNewTab() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -114,7 +110,7 @@ function CreateNewTab() {
     e.preventDefault();
     setResult(null);
     startTransition(async () => {
-      const res = await createTrainee({ name, email, password, username });
+      const res = await createTrainee({ name, username, password });
       setResult(res);
       if (res.success) {
         setTimeout(() => { window.location.href = "/trainer/trainees"; }, 1500);
@@ -159,19 +155,6 @@ function CreateNewTab() {
       </div>
 
       <div>
-        <FieldLabel htmlFor="new-email">Email address</FieldLabel>
-        <Input
-          id="new-email"
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="jane@example.com"
-          required
-          disabled={isPending || done}
-        />
-      </div>
-
-      <div>
         <FieldLabel htmlFor="new-password">Password</FieldLabel>
         <Input
           id="new-password"
@@ -194,7 +177,7 @@ function CreateNewTab() {
 
       <button
         type="submit"
-        disabled={isPending || !name.trim() || !username.trim() || !email.trim() || !password || done}
+        disabled={isPending || !name.trim() || !username.trim() || !password || done}
         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 dark:disabled:bg-emerald-800 text-white text-sm font-medium transition-colors disabled:cursor-not-allowed"
       >
         {isPending
@@ -214,7 +197,6 @@ export default function AddTraineePage() {
 
   return (
     <div className="p-6 max-w-lg mx-auto w-full">
-      {/* Back */}
       <Link
         href="/trainer/trainees"
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6 transition-colors"
@@ -224,7 +206,6 @@ export default function AddTraineePage() {
       </Link>
 
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 shrink-0">
             <UserPlus className="w-5 h-5" />
@@ -235,7 +216,6 @@ export default function AddTraineePage() {
           </div>
         </div>
 
-        {/* Tab switcher */}
         <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-6">
           <button
             onClick={() => setTab("create")}

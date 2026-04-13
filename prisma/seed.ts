@@ -11,7 +11,6 @@ const adapter = new PrismaNeonHttp(connectionString, {
 });
 const prisma = new PrismaClient({ adapter });
 
-// Helper: find or create without upsert (no transactions needed)
 async function findOrCreate<T>(
   findFn: () => Promise<T | null>,
   createFn: () => Promise<T>
@@ -30,37 +29,28 @@ async function main() {
   // ── Users ──────────────────────────────────────────────────────────────────
 
   const trainer = await findOrCreate(
-    () => prisma.user.findUnique({ where: { email: "trainer@app.com" } }),
+    () => prisma.user.findUnique({ where: { username: "coach_assaf" } }),
     () => prisma.user.create({
-      data: { email: "trainer@app.com", passwordHash: trainerPassword, name: "Coach Assaf", role: "TRAINER", username: "coach_assaf" },
+      data: { passwordHash: trainerPassword, name: "Coach Assaf", role: "TRAINER", username: "coach_assaf" },
     })
   );
-  if (!trainer.username) {
-    await prisma.user.update({ where: { id: trainer.id }, data: { username: "coach_assaf" } });
-  }
-  console.log("Trainer:", trainer.email);
+  console.log("Trainer:", trainer.username);
 
   const alice = await findOrCreate(
-    () => prisma.user.findUnique({ where: { email: "alice@app.com" } }),
+    () => prisma.user.findUnique({ where: { username: "alice_cohen" } }),
     () => prisma.user.create({
-      data: { email: "alice@app.com", passwordHash: traineePassword, name: "Alice Cohen", role: "TRAINEE", username: "alice_cohen" },
+      data: { passwordHash: traineePassword, name: "Alice Cohen", role: "TRAINEE", username: "alice_cohen" },
     })
   );
-  if (!alice.username) {
-    await prisma.user.update({ where: { id: alice.id }, data: { username: "alice_cohen" } });
-  }
-  console.log("Trainee:", alice.email);
+  console.log("Trainee:", alice.username);
 
   const bob = await findOrCreate(
-    () => prisma.user.findUnique({ where: { email: "bob@app.com" } }),
+    () => prisma.user.findUnique({ where: { username: "bob_levi" } }),
     () => prisma.user.create({
-      data: { email: "bob@app.com", passwordHash: traineePassword, name: "Bob Levi", role: "TRAINEE", username: "bob_levi" },
+      data: { passwordHash: traineePassword, name: "Bob Levi", role: "TRAINEE", username: "bob_levi" },
     })
   );
-  if (!bob.username) {
-    await prisma.user.update({ where: { id: bob.id }, data: { username: "bob_levi" } });
-  }
-  console.log("Trainee:", bob.email);
+  console.log("Trainee:", bob.username);
 
   // ── Profiles ───────────────────────────────────────────────────────────────
 
@@ -103,7 +93,6 @@ async function main() {
   if (existingWorkouts === 0) {
     const now = new Date();
 
-    // Workout 1 — past, completed
     const w1 = await prisma.workout.create({
       data: {
         title: "Easy Recovery Run",
@@ -119,9 +108,7 @@ async function main() {
       { order: 2, distance: 5.0, pace: "6:00", remarks: "Easy pace" },
       { order: 3, distance: 1.0, pace: "6:30", remarks: "Cool down" },
     ]) { await prisma.workoutSegment.create({ data: { workoutId: w1.id, ...seg } }); }
-    console.log("Created workout 1:", w1.title);
 
-    // Workout 2 — past, completed
     const w2 = await prisma.workout.create({
       data: {
         title: "Tempo Run",
@@ -139,9 +126,7 @@ async function main() {
       { order: 4, distance: 1.0, pace: "4:45", remarks: "Tempo rep 2" },
       { order: 5, distance: 2.0, pace: "6:00", remarks: "Cool down" },
     ]) { await prisma.workoutSegment.create({ data: { workoutId: w2.id, ...seg } }); }
-    console.log("Created workout 2:", w2.title);
 
-    // Workout 3 — upcoming
     const w3 = await prisma.workout.create({
       data: {
         title: "Long Run",
@@ -157,15 +142,16 @@ async function main() {
       { order: 2, distance: 14.0, pace: "5:55", remarks: "Long run main set" },
       { order: 3, distance: 2.0, pace: "6:20", remarks: "Cool down" },
     ]) { await prisma.workoutSegment.create({ data: { workoutId: w3.id, ...seg } }); }
-    console.log("Created workout 3:", w3.title);
+
+    console.log("Workouts created");
   } else {
     console.log("Workouts already exist, skipping");
   }
 
   console.log("\nSeeding complete!");
-  console.log("Trainer:  trainer@app.com / trainer123");
-  console.log("Trainee:  alice@app.com   / trainee123");
-  console.log("Trainee:  bob@app.com     / trainee123");
+  console.log("Trainer:  username=coach_assaf / trainer123");
+  console.log("Trainee:  username=alice_cohen / trainee123");
+  console.log("Trainee:  username=bob_levi    / trainee123");
 }
 
 main()

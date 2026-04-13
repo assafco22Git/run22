@@ -17,10 +17,10 @@ async function requireTrainerProfile() {
   return prisma.trainerProfile.findUnique({ where: { userId: session.user.id } });
 }
 
-// ─── Link an existing trainee account ───────────────────────────────────────
+// ─── Link an existing trainee account by username ────────────────────────────
 
 export async function addTrainee(
-  email: string
+  identifier: string
 ): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
 
@@ -32,31 +32,23 @@ export async function addTrainee(
     return { success: false, error: "Unauthorized" };
   }
 
-  const trimmedEmail = email.trim().toLowerCase();
-
-  if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-    return { success: false, error: "Please enter a valid email address" };
+  const trimmed = identifier.trim();
+  if (!trimmed) {
+    return { success: false, error: "Please enter a username or name" };
   }
 
-  // Find user by email
-  const targetUser = await prisma.user.findUnique({
-    where: { email: trimmedEmail },
+  // Find user by username or name
+  const targetUser = await prisma.user.findFirst({
+    where: { OR: [{ username: trimmed }, { name: trimmed }] },
     include: { traineeProfile: true },
   });
 
   if (!targetUser) {
-    return {
-      success: false,
-      error: "No account found with that email address",
-    };
+    return { success: false, error: "No account found with that username" };
   }
 
-  // Ensure the user has TRAINEE role
   if ((targetUser.role as Role) !== "TRAINEE") {
-    return {
-      success: false,
-      error: "That account is not registered as a trainee",
-    };
+    return { success: false, error: "That account is not registered as a trainee" };
   }
 
   // Get or create the trainer profile
@@ -80,25 +72,17 @@ export async function addTrainee(
 
   // Check if already linked
   const existingLink = await prisma.trainerTrainee.findFirst({
-    where: {
-      trainerId: trainerProfile.id,
-      traineeId: traineeProfile.id,
-    },
+    where: { trainerId: trainerProfile.id, traineeId: traineeProfile.id },
   });
 
   if (existingLink) {
     return { success: false, error: "This trainee is already linked to your account" };
   }
 
-  // Create the TrainerTrainee link
   try {
     await prisma.trainerTrainee.create({
-      data: {
-        trainerId: trainerProfile.id,
-        traineeId: traineeProfile.id,
-      },
+      data: { trainerId: trainerProfile.id, traineeId: traineeProfile.id },
     });
-
     return { success: true };
   } catch {
     return { success: false, error: "Failed to add trainee. Please try again." };
@@ -109,29 +93,21 @@ export async function addTrainee(
 
 export async function createTrainee(data: {
   name: string;
-  email: string;
-  password: string;
   username: string;
+  password: string;
 }): Promise<{ success: boolean; error?: string }> {
   const trainerProfile = await requireTrainerProfile();
   if (!trainerProfile) return { success: false, error: "Unauthorized" };
 
   const name = data.name.trim();
-  const email = data.email.trim().toLowerCase();
-  const password = data.password;
   const username = data.username.trim().toLowerCase();
+  const password = data.password;
 
   if (!name) return { success: false, error: "Name is required" };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    return { success: false, error: "Invalid email address" };
-  if (password.length < 6)
-    return { success: false, error: "Password must be at least 6 characters" };
   if (!/^[a-z0-9_.]{3,30}$/.test(username))
     return { success: false, error: "Username must be 3–30 chars: letters, numbers, _ and . only" };
-
-  // Check email not already in use
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { success: false, error: "An account with that email already exists" };
+  if (password.length < 6)
+    return { success: false, error: "Password must be at least 6 characters" };
 
   // Check username not already in use
   const existingUsername = await prisma.user.findUnique({ where: { username } });
@@ -141,7 +117,7 @@ export async function createTrainee(data: {
 
   // Create user
   const user = await prisma.user.create({
-    data: { name, email, passwordHash, role: "TRAINEE", username },
+    data: { name, passwordHash, role: "TRAINEE", username },
   });
 
   // Create trainee profile
@@ -176,7 +152,7 @@ export async function removeTrainee(
   return { success: true };
 }
 
-// ─── Update trainee profile details (name, dob, gender, email, password) ────
+// ─── Update trainee profile details ─────────────────────────────────────────
 
 export async function updateTraineeDetails(
   traineeId: string,
@@ -185,7 +161,6 @@ export async function updateTraineeDetails(
     dob?: string;
     gender?: string;
     username?: string;
-    email?: string;
     newPassword?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
@@ -197,52 +172,29 @@ export async function updateTraineeDetails(
   });
   if (!link) return { success: false, error: "Trainee not linked to your account" };
 
-  const traineeProfile = await prisma.traineeProfile.findUnique({
-    where: { id: traineeId },
-  });
+  const traineeProfile = await prisma.traineeProfile.findUnique({ where: { id: traineeId } });
   if (!traineeProfile) return { success: false, error: "Trainee profile not found" };
 
   const name = data.name.trim();
   if (!name) return { success: false, error: "Name is required" };
 
-  // Validate new email if provided
-  if (data.email) {
-    const newEmail = data.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail))
-      return { success: false, error: "Invalid email address" };
-
-    // Check not taken by another user
-    const conflict = await prisma.user.findUnique({ where: { email: newEmail } });
-    if (conflict && conflict.id !== traineeProfile.userId)
-      return { success: false, error: "That email address is already in use" };
-  }
-
-  // Validate new username if provided
   if (data.username) {
     const newUsername = data.username.trim().toLowerCase();
     if (!/^[a-z0-9_.]{3,30}$/.test(newUsername))
       return { success: false, error: "Username must be 3–30 chars: letters, numbers, _ and . only" };
-
-    // Check not taken by another user
     const conflict = await prisma.user.findUnique({ where: { username: newUsername } });
     if (conflict && conflict.id !== traineeProfile.userId)
       return { success: false, error: "That username is already taken" };
   }
 
-  // Validate new password if provided
   if (data.newPassword && data.newPassword.length < 6)
     return { success: false, error: "Password must be at least 6 characters" };
 
-  // Build user update payload
-  const userUpdate: { name: string; email?: string; username?: string; passwordHash?: string } = { name };
-  if (data.email) userUpdate.email = data.email.trim().toLowerCase();
+  const userUpdate: { name: string; username?: string; passwordHash?: string } = { name };
   if (data.username) userUpdate.username = data.username.trim().toLowerCase();
   if (data.newPassword) userUpdate.passwordHash = await bcrypt.hash(data.newPassword, 12);
 
-  await prisma.user.update({
-    where: { id: traineeProfile.userId },
-    data: userUpdate,
-  });
+  await prisma.user.update({ where: { id: traineeProfile.userId }, data: userUpdate });
 
   await prisma.traineeProfile.update({
     where: { id: traineeId },

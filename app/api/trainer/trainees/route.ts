@@ -34,7 +34,6 @@ export async function GET() {
   const trainees = trainerProfile.trainees.map(({ trainee }) => ({
     id: trainee.id,
     name: trainee.user.name,
-    email: trainee.user.email,
   }));
 
   return NextResponse.json({ trainees });

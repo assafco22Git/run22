@@ -11,7 +11,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       name: "credentials",
       credentials: {
-        // "username" accepts the user's display name OR email
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
@@ -22,13 +21,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const identifier = credentials.username as string;
 
-        // Look up by username first, then name, then email
+        // Look up by username first, then name
         const user = await prisma.user.findFirst({
           where: {
             OR: [
               { username: identifier },
               { name: identifier },
-              { email: identifier },
             ],
           },
         });
@@ -48,7 +46,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return {
           id: user.id,
-          email: user.email,
           name: user.name,
           image: user.image,
           role: user.role as Role,

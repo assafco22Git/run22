@@ -15,7 +15,7 @@ export async function updateName(formData: FormData): Promise<void> {
 
   const raw = formData.get("name");
   const parsed = nameSchema.safeParse(raw);
-  if (!parsed.success) return; // silently ignore — client validates first
+  if (!parsed.success) return;
 
   const currentUser = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -35,7 +35,6 @@ export async function updateName(formData: FormData): Promise<void> {
 
 export async function updateTrainerCredentials(data: {
   name: string;
-  email?: string;
   username?: string;
   newPassword?: string;
 }): Promise<{ success: boolean; error?: string }> {
@@ -44,15 +43,6 @@ export async function updateTrainerCredentials(data: {
 
   const name = data.name.trim();
   if (!name) return { success: false, error: "Name is required" };
-
-  if (data.email) {
-    const email = data.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return { success: false, error: "Invalid email address" };
-    const conflict = await prisma.user.findUnique({ where: { email } });
-    if (conflict && conflict.id !== session.user.id)
-      return { success: false, error: "That email address is already in use" };
-  }
 
   if (data.username) {
     const username = data.username.trim().toLowerCase();
@@ -67,7 +57,6 @@ export async function updateTrainerCredentials(data: {
     return { success: false, error: "Password must be at least 6 characters" };
 
   const update: Record<string, string> = { name };
-  if (data.email) update.email = data.email.trim().toLowerCase();
   if (data.username) update.username = data.username.trim().toLowerCase();
   if (data.newPassword) update.passwordHash = await bcrypt.hash(data.newPassword, 12);
 

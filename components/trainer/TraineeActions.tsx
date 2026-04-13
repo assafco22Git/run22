@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Trash2, X, Check, Loader2, Eye, EyeOff } from "lucide-react";
 import { removeTrainee, updateTraineeDetails } from "@/app/actions/trainees";
@@ -9,9 +8,8 @@ import { removeTrainee, updateTraineeDetails } from "@/app/actions/trainees";
 interface TraineeActionsProps {
   traineeId: string;
   initialName: string;
-  initialEmail?: string | null;
   initialUsername?: string | null;
-  initialDob?: string | null;   // "YYYY-MM-DD"
+  initialDob?: string | null;
   initialGender?: string | null;
 }
 
@@ -35,17 +33,13 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export function TraineeActions({
   traineeId,
   initialName,
-  initialEmail,
   initialUsername,
   initialDob,
   initialGender,
 }: TraineeActionsProps) {
-  const router = useRouter();
   const [editing, setEditing] = useState(false);
 
-  // Form state
   const [name, setName] = useState(initialName);
-  const [email, setEmail] = useState(initialEmail ?? "");
   const [username, setUsername] = useState(initialUsername ?? "");
   const [dob, setDob] = useState(initialDob ?? "");
   const [gender, setGender] = useState(initialGender ?? "");
@@ -56,7 +50,6 @@ export function TraineeActions({
 
   function resetForm() {
     setName(initialName);
-    setEmail(initialEmail ?? "");
     setUsername(initialUsername ?? "");
     setDob(initialDob ?? "");
     setGender(initialGender ?? "");
@@ -69,7 +62,6 @@ export function TraineeActions({
     startTransition(async () => {
       const result = await updateTraineeDetails(traineeId, {
         name: name.trim(),
-        email: email.trim() || undefined,
         username: username.trim() || undefined,
         dob: dob || undefined,
         gender: gender || undefined,
@@ -125,7 +117,6 @@ export function TraineeActions({
         Edit Trainee
       </p>
 
-      {/* Profile info */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="sm:col-span-2">
           <FieldLabel>Full name *</FieldLabel>
@@ -150,21 +141,10 @@ export function TraineeActions({
         </div>
       </div>
 
-      {/* Credentials */}
       <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-3">
         <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
           Login credentials
         </p>
-        <div>
-          <FieldLabel>Email address</FieldLabel>
-          <TextInput
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="e.g. alice@example.com"
-            autoComplete="off"
-          />
-        </div>
         <div>
           <FieldLabel>Username</FieldLabel>
           <TextInput
@@ -199,7 +179,6 @@ export function TraineeActions({
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={handleSave}

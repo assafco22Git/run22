@@ -4,7 +4,7 @@ import { requireTrainer } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Mail, Calendar, Dumbbell, AtSign, Pencil } from "lucide-react";
+import { ArrowLeft, Calendar, Dumbbell, AtSign, Pencil } from "lucide-react";
 import type { WorkoutStatus } from "@/types";
 import { TraineeAnalyticsChart } from "@/components/charts/TraineeAnalyticsChart";
 import { TraineeActions } from "@/components/trainer/TraineeActions";
@@ -163,10 +163,6 @@ export default async function TraineeDetailPage({ params }: PageProps) {
             </h1>
             <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500 dark:text-gray-400">
               <span className="flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5" />
-                {traineeProfile.user.email}
-              </span>
-              <span className="flex items-center gap-1">
                 <AtSign className="w-3.5 h-3.5" />
                 {traineeProfile.user.username ? `@${traineeProfile.user.username}` : "No username set"}
               </span>
@@ -193,7 +189,6 @@ export default async function TraineeDetailPage({ params }: PageProps) {
           <TraineeActions
             traineeId={traineeId}
             initialName={traineeProfile.user.name}
-            initialEmail={traineeProfile.user.email}
             initialUsername={traineeProfile.user.username}
             initialDob={dobFormatted}
             initialGender={traineeProfile.gender}
