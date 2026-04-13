@@ -21,12 +21,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const identifier = credentials.username as string;
 
-        // Look up by username first, then name
+        // Look up by username (case-insensitive) or name
         const user = await prisma.user.findFirst({
           where: {
             OR: [
-              { username: identifier },
-              { name: identifier },
+              { username: { equals: identifier, mode: "insensitive" } },
+              { name: { equals: identifier, mode: "insensitive" } },
             ],
           },
         });

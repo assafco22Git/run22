@@ -23,18 +23,21 @@ async function findOrCreate<T>(
 async function main() {
   console.log("Seeding database...");
 
-  const trainerPassword = await bcrypt.hash("trainer123", 10);
+  const trainerPassword = await bcrypt.hash("Coach123", 10);
   const traineePassword = await bcrypt.hash("trainee123", 10);
 
-  // ── Users ──────────────────────────────────────────────────────────────────
+  // ── Trainer — always ensure credentials are up to date ────────────────────
 
-  const trainer = await findOrCreate(
-    () => prisma.user.findUnique({ where: { username: "coach_assaf" } }),
-    () => prisma.user.create({
-      data: { passwordHash: trainerPassword, name: "Coach Assaf", role: "TRAINER", username: "coach_assaf" },
-    })
-  );
-  console.log("Trainer:", trainer.username);
+  const existingTrainer = await prisma.user.findFirst({ where: { role: "TRAINER" } });
+  const trainer = existingTrainer
+    ? await prisma.user.update({
+        where: { id: existingTrainer.id },
+        data: { username: "coach", passwordHash: trainerPassword },
+      })
+    : await prisma.user.create({
+        data: { name: "Coach", passwordHash: trainerPassword, role: "TRAINER", username: "coach" },
+      });
+  console.log("Trainer username set to: coach");
 
   const alice = await findOrCreate(
     () => prisma.user.findUnique({ where: { username: "alice_cohen" } }),

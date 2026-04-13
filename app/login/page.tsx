@@ -16,7 +16,12 @@ async function loginAction(formData: FormData) {
   let redirectTo = "/calendar";
   try {
     const user = await prisma.user.findFirst({
-      where: { OR: [{ username }, { name: username }] },
+      where: {
+        OR: [
+          { username: { equals: username, mode: "insensitive" } },
+          { name: { equals: username, mode: "insensitive" } },
+        ],
+      },
       select: { role: true, passwordHash: true },
     });
     if (user?.passwordHash && await bcrypt.compare(password, user.passwordHash)) {
