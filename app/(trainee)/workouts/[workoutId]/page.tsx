@@ -285,7 +285,7 @@ export default async function WorkoutDetailPage({
                           </td>
                           <td className="py-2.5 text-right text-gray-900 dark:text-gray-100">
                             {sr.distance
-                              ? sr.distance.toFixed(2) + " km"
+                              ? (sr.distance / 1000).toFixed(2) + " km"
                               : "—"}
                           </td>
                           <td className="py-2.5 text-right text-gray-500 dark:text-gray-400 font-mono">

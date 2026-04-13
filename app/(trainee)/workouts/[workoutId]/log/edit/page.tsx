@@ -44,7 +44,7 @@ export default async function EditLogPage({ params }: EditLogPageProps) {
 
   const segmentResults = result.segmentResults.map((sr) => ({
     segmentId: sr.segmentId,
-    distanceKm: sr.distance != null ? String(sr.distance) : "",
+    distanceKm: sr.distance != null ? (sr.distance / 1000).toFixed(2) : "",
     timeMMSS: sr.duration != null ? secondsToMMSS(sr.duration) : "",
   }));
 
