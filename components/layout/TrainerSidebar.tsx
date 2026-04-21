@@ -8,6 +8,7 @@ import {
   Plus,
   LogOut,
   Settings,
+  Upload,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -18,8 +19,9 @@ import { NotificationBell } from "@/components/NotificationBell";
 const navItems = [
   { label: "Dashboard",   href: "/trainer/dashboard",     icon: LayoutDashboard },
   { label: "Trainees",    href: "/trainer/trainees",      icon: Users           },
-  { label: "New Workout", href: "/trainer/workouts/new",  icon: Plus            },
-  { label: "Settings",    href: "/trainer/settings",      icon: Settings        },
+  { label: "New Workout", href: "/trainer/workouts/new",    icon: Plus   },
+  { label: "Bulk Upload", href: "/trainer/workouts/upload", icon: Upload },
+  { label: "Settings",    href: "/trainer/settings",        icon: Settings },
 ];
 
 interface TrainerSidebarProps {

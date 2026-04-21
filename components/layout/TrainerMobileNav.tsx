@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Plus, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Plus, Settings, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", href: "/trainer/dashboard", icon: LayoutDashboard },
   { label: "Trainees",  href: "/trainer/trainees",  icon: Users },
-  { label: "New",       href: "/trainer/workouts/new", icon: Plus, fab: true },
-  { label: "Settings",  href: "/trainer/settings",  icon: Settings },
+  { label: "New",      href: "/trainer/workouts/new",    icon: Plus, fab: true },
+  { label: "Upload",   href: "/trainer/workouts/upload", icon: Upload },
+  { label: "Settings", href: "/trainer/settings",        icon: Settings },
 ];
 
 export function TrainerMobileNav() {
