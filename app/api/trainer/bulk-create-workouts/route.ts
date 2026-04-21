@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
             workoutId: workout.id,
             order: seg.order,
             distance: seg.distance ?? 0,
-            pace: seg.pace ?? null,
+            pace: seg.pace ?? "",
             remarks: seg.remarks ?? null,
           },
         });
