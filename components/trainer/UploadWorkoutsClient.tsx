@@ -249,7 +249,7 @@ export function UploadWorkoutsClient({ trainees }: { trainees: Trainee[] }) {
           Bulk Upload Workouts
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Upload an Excel or CSV file — AI will parse any format automatically.
+          Upload your marathon plan spreadsheet to schedule workouts in bulk.
         </p>
       </div>
 
@@ -351,9 +351,9 @@ export function UploadWorkoutsClient({ trainees }: { trainees: Trainee[] }) {
 
           {/* Format hint */}
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900 rounded-xl p-3">
-            <p className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1">Any format works</p>
+            <p className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1">Expected format</p>
             <p className="text-xs text-blue-600 dark:text-blue-500">
-              The AI will read your file regardless of column names or layout. For best results include: date, workout name, distance, and pace. Segments can be in separate rows or columns.
+              Use the standard marathon plan layout: columns Block · Week · Target % · km · Mon–Sun · Notes. The Notes column should contain the week's date range (e.g. "April 19th–25th").
             </p>
           </div>
 
@@ -372,7 +372,8 @@ export function UploadWorkoutsClient({ trainees }: { trainees: Trainee[] }) {
             {parsing ? (
               <><Loader2 className="w-4 h-4 animate-spin" />Parsing your file…</>
             ) : (
-              <><Upload className="w-4 h-4" />Parse with AI</>
+              <><Upload className="w-4 h-4" />Import Workouts</>
+
             )}
           </button>
         </div>
@@ -384,7 +385,7 @@ export function UploadWorkoutsClient({ trainees }: { trainees: Trainee[] }) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                AI found <span className="font-semibold text-gray-900 dark:text-gray-100">{workouts.length} workout{workouts.length !== 1 ? "s" : ""}</span> for <span className="font-semibold text-gray-900 dark:text-gray-100">{traineeName}</span>.
+                Found <span className="font-semibold text-gray-900 dark:text-gray-100">{workouts.length} workout{workouts.length !== 1 ? "s" : ""}</span> for <span className="font-semibold text-gray-900 dark:text-gray-100">{traineeName}</span>.
                 Review and edit before saving.
               </p>
             </div>
