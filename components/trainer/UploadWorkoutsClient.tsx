@@ -370,7 +370,7 @@ export function UploadWorkoutsClient({ trainees }: { trainees: Trainee[] }) {
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors"
           >
             {parsing ? (
-              <><Loader2 className="w-4 h-4 animate-spin" />AI is parsing your file…</>
+              <><Loader2 className="w-4 h-4 animate-spin" />Parsing your file…</>
             ) : (
               <><Upload className="w-4 h-4" />Parse with AI</>
             )}
