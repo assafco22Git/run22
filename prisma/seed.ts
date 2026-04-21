@@ -34,12 +34,34 @@ async function main() {
   // ── Remove demo users created by old seed ─────────────────────────────────
 
   for (const username of ["alice_cohen", "bob_levi"]) {
-    const user = await prisma.user.findUnique({ where: { username } });
-    if (user) {
-      // Cascade: workouts, results, notifications, etc. handled by DB onDelete
-      await prisma.user.delete({ where: { id: user.id } });
-      console.log(`Deleted demo user: ${username}`);
+    const user = await prisma.user.findUnique({
+      where: { username },
+      include: { traineeProfile: true },
+    });
+    if (!user) continue;
+
+    const traineeProfile = user.traineeProfile;
+    if (traineeProfile) {
+      // Delete workouts and their children first
+      const workouts = await prisma.workout.findMany({
+        where: { traineeId: traineeProfile.id },
+        select: { id: true },
+      });
+      for (const w of workouts) {
+        await prisma.workoutSegmentResult.deleteMany({ where: { result: { workoutId: w.id } } });
+        await prisma.workoutResult.deleteMany({ where: { workoutId: w.id } });
+        await prisma.workoutSegment.deleteMany({ where: { workoutId: w.id } });
+        await prisma.workout.delete({ where: { id: w.id } });
+      }
+      // Delete trainer links and preferences
+      await prisma.trainerTrainee.deleteMany({ where: { traineeId: traineeProfile.id } });
+      await prisma.traineePreference.deleteMany({ where: { traineeId: traineeProfile.id } });
+      await prisma.traineeProfile.delete({ where: { id: traineeProfile.id } });
     }
+
+    await prisma.notification.deleteMany({ where: { userId: user.id } });
+    await prisma.user.delete({ where: { id: user.id } });
+    console.log(`Deleted demo user: ${username}`);
   }
 
   console.log("\nSeed complete.");
