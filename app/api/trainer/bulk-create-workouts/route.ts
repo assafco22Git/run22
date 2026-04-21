@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
           data: {
             workoutId: workout.id,
             order: seg.order,
-            distance: seg.distance ?? null,
+            distance: seg.distance ?? 0,
             pace: seg.pace ?? null,
             remarks: seg.remarks ?? null,
           },
