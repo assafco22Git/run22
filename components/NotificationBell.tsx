@@ -105,12 +105,14 @@ export function NotificationBell({ placement = "down" }: NotificationBellProps) 
       {open && (
         <div
           className={cn(
-            "absolute right-0 z-[100] w-80",
+            "absolute z-[100] w-80",
             "bg-white dark:bg-gray-900",
             "border border-gray-200 dark:border-gray-700",
             "rounded-2xl shadow-2xl shadow-black/10 dark:shadow-black/40",
             "overflow-hidden",
-            placement === "up" ? "bottom-full mb-2" : "top-full mt-2"
+            placement === "up"
+              ? "bottom-full mb-2 left-0"   // sidebar: opens upward, extends rightward
+              : "top-full mt-2 right-0"      // top-bar: opens downward, extends leftward
           )}
         >
           {/* Header */}
