@@ -196,7 +196,7 @@ export default async function TrainerDashboardPage() {
                 </div>
                 {result.totalDistance != null && (
                   <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
-                    {result.totalDistance.toFixed(1)} km
+                    {(result.totalDistance / 1000).toFixed(1)} km
                   </span>
                 )}
               </li>
