@@ -39,14 +39,14 @@ export default async function RacesPage() {
 
   // Build workout refs for the predictor (min 3 km to give meaningful predictions)
   const workoutRefs: WorkoutRef[] = workoutResults
-    .filter((r) => (r.totalDistance ?? 0) >= 3000 && (r.totalDuration ?? 0) > 0)
+    .filter((r) => (r.totalDistance ?? 0) >= 3 && (r.totalDuration ?? 0) > 0)
     .map((r) => ({
       id: r.id,
       label: `${r.workout.title} – ${r.workout.scheduledAt.toLocaleDateString(
         "en-GB",
         { day: "numeric", month: "short" }
-      )} (${((r.totalDistance ?? 0) / 1000).toFixed(1)} km)`,
-      distanceM: r.totalDistance!,
+      )} (${(r.totalDistance ?? 0).toFixed(1)} km)`,
+      distanceM: (r.totalDistance ?? 0) * 1000, // predictor expects meters
       durationS: r.totalDuration!,
     }));
 

@@ -168,7 +168,7 @@ export default async function WorkoutDetailPage({
               {
                 label: "Distance",
                 value: result.totalDistance
-                  ? (result.totalDistance / 1000).toFixed(2) + " km"
+                  ? result.totalDistance.toFixed(2) + " km"
                   : "—",
               },
               {
@@ -285,7 +285,7 @@ export default async function WorkoutDetailPage({
                           </td>
                           <td className="py-2.5 text-right text-gray-900 dark:text-gray-100">
                             {sr.distance
-                              ? (sr.distance / 1000).toFixed(2) + " km"
+                              ? sr.distance.toFixed(2) + " km"
                               : "—"}
                           </td>
                           <td className="py-2.5 text-right text-gray-500 dark:text-gray-400 font-mono">

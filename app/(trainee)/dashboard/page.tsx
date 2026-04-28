@@ -102,7 +102,7 @@ export default async function DashboardPage() {
     select: { totalDistance: true },
   });
   const kmThisWeek =
-    thisWeekResults.reduce((sum, r) => sum + (r.totalDistance ?? 0), 0) / 1000;
+    thisWeekResults.reduce((sum, r) => sum + (r.totalDistance ?? 0), 0);
 
   // Avg pace this month
   const startOfMonth = new Date();
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
     }
     weekDayMap.get(wKey)![dow].push({
       title: r.workout.title,
-      km: (r.totalDistance ?? 0) / 1000,
+      km: r.totalDistance ?? 0,
     });
 
     // Pace accumulation
@@ -313,7 +313,7 @@ export default async function DashboardPage() {
                     </td>
                     <td className="py-2.5 text-right text-gray-700 dark:text-gray-300">
                       {r.totalDistance
-                        ? (r.totalDistance / 1000).toFixed(1) + " km"
+                        ? r.totalDistance.toFixed(1) + " km"
                         : "—"}
                     </td>
                     <td className="py-2.5 text-right text-gray-700 dark:text-gray-300">

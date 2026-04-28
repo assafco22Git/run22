@@ -191,7 +191,7 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
               <div className="bg-white dark:bg-gray-900 px-5 py-4">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Distance</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  {(result.totalDistance / 1000).toFixed(2)}{" "}
+                  {result.totalDistance.toFixed(2)}{" "}
                   <span className="text-sm font-normal text-gray-500">km</span>
                 </p>
               </div>

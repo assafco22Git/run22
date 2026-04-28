@@ -39,7 +39,7 @@ function buildChartData(
         map[days[idx]] += w.result?.totalDistance ?? 0;
       }
     }
-    return days.map((d) => ({ label: d, km: parseFloat((map[d] / 1000).toFixed(2)) }));
+    return days.map((d) => ({ label: d, km: parseFloat(map[d].toFixed(2)) }));
   }
 
   if (period === "monthly") {
@@ -55,7 +55,7 @@ function buildChartData(
         map[weeks[weekIdx]] += w.result?.totalDistance ?? 0;
       }
     }
-    return weeks.map((w) => ({ label: w, km: parseFloat((map[w] / 1000).toFixed(2)) }));
+    return weeks.map((w) => ({ label: w, km: parseFloat(map[w].toFixed(2)) }));
   }
 
   // yearly
@@ -70,7 +70,7 @@ function buildChartData(
       map[months[d.getMonth()]] += w.result?.totalDistance ?? 0;
     }
   }
-  return months.map((m) => ({ label: m, km: parseFloat((map[m] / 1000).toFixed(2)) }));
+  return months.map((m) => ({ label: m, km: parseFloat(map[m].toFixed(2)) }));
 }
 
 interface PageProps {
@@ -115,9 +115,9 @@ export default async function TraineeDetailPage({ params }: PageProps) {
   const monthlyData = buildChartData(traineeProfile.workouts, "monthly");
   const yearlyData = buildChartData(traineeProfile.workouts, "yearly");
 
-  const totalDistance = (
-    traineeProfile.workouts.reduce((sum, w) => sum + (w.result?.totalDistance ?? 0), 0) / 1000
-  ).toFixed(1);
+  const totalDistance = traineeProfile.workouts
+    .reduce((sum, w) => sum + (w.result?.totalDistance ?? 0), 0)
+    .toFixed(1);
   const completedCount = traineeProfile.workouts.filter(
     (w) => w.status === "COMPLETED"
   ).length;
@@ -270,7 +270,7 @@ export default async function TraineeDetailPage({ params }: PageProps) {
                   <div className="flex items-center gap-2 shrink-0">
                     {workout.result?.totalDistance != null && (
                       <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                        {(workout.result.totalDistance / 1000).toFixed(1)} km
+                        {workout.result.totalDistance.toFixed(1)} km
                       </span>
                     )}
                     <Link

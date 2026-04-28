@@ -33,7 +33,7 @@ export default async function EditLogPage({ params }: EditLogPageProps) {
 
   // Convert stored values back to form-friendly formats
   const totalDistanceKm = result.totalDistance
-    ? (result.totalDistance / 1000).toFixed(2)
+    ? result.totalDistance.toFixed(2)
     : "";
   const totalMinutes = result.totalDuration
     ? String(Math.floor(result.totalDuration / 60))
@@ -44,7 +44,7 @@ export default async function EditLogPage({ params }: EditLogPageProps) {
 
   const segmentResults = result.segmentResults.map((sr) => ({
     segmentId: sr.segmentId,
-    distanceKm: sr.distance != null ? (sr.distance / 1000).toFixed(2) : "",
+    distanceKm: sr.distance != null ? sr.distance.toFixed(2) : "",
     timeMMSS: sr.duration != null ? secondsToMMSS(sr.duration) : "",
   }));
 

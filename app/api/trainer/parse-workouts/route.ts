@@ -85,6 +85,17 @@ function parseMinutes(text: string): number | null {
   return null;
 }
 
+/** Derive pace "M:SS /km" from duration (minutes) and distance (km) */
+function derivePace(minutes: number, km: number): string | null {
+  if (!minutes || !km || km <= 0) return null;
+  const totalSec = (minutes / km) * 60;
+  const paceMin = Math.floor(totalSec / 60);
+  const paceSec = Math.round(totalSec % 60);
+  // Sanity check: realistic running pace is 2:30–12:00 /km
+  if (paceMin < 2 || paceMin > 12) return null;
+  return `${paceMin}:${paceSec.toString().padStart(2, "0")}`;
+}
+
 /** Derive a clean title from the workout cell text */
 function parseTitle(text: string): string {
   const lower = text.toLowerCase();
@@ -198,15 +209,11 @@ export async function POST(req: NextRequest) {
       const title    = parseTitle(cell);
       const km       = parseKm(cell);
       const minutes  = parseMinutes(cell);
+      const pace     = (km && minutes) ? derivePace(minutes, km) : null;
 
       const segments: ParsedSegment[] = km
-        ? [{ order: 1, distance: km, pace: undefined, remarks: undefined }]
+        ? [{ order: 1, distance: km, pace: pace ?? undefined, remarks: undefined }]
         : [];
-
-      const descParts: string[] = [];
-      if (minutes) descParts.push(`Duration: ${minutes >= 60 ? `${Math.floor(minutes / 60)}h${minutes % 60 > 0 ? (minutes % 60) + "min" : ""}` : `${minutes} min`}`);
-      if (km)      descParts.push(`Distance: ≈${km} km`);
-      descParts.push(cell);
 
       workouts.push({
         title,

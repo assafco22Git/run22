@@ -33,7 +33,7 @@ export default async function LeaderboardPage() {
     .map((t) => ({
       name: t.user.name,
       km:
-        t.results.reduce((sum, r) => sum + (r.totalDistance ?? 0), 0) / 1000,
+        t.results.reduce((sum, r) => sum + (r.totalDistance ?? 0), 0),
       workouts: t.results.length,
       totalDurationS: t.results.reduce(
         (sum, r) => sum + (r.totalDuration ?? 0),

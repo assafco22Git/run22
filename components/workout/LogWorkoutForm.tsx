@@ -92,24 +92,25 @@ export function LogWorkoutForm({
     const totalDurationSecs =
       (parseInt(minutes) || 0) * 60 +
       (parseInt(secs) || 0);
-    const distMeters = distanceKm ? parseFloat(distanceKm) * 1000 : undefined;
+    // Store in km (no unit conversion); pacePerKm still needs meters internally
+    const distKm = distanceKm ? parseFloat(distanceKm) : undefined;
 
     const avgPace =
-      distMeters && totalDurationSecs
-        ? pacePerKm(distMeters, totalDurationSecs)
+      distKm && totalDurationSecs
+        ? pacePerKm(distKm * 1000, totalDurationSecs)
         : undefined;
 
     const segmentResultsData = segResults
       .filter((sr) => sr.distanceKm || sr.timeMMSS)
       .map((sr) => {
-        const distM = sr.distanceKm ? parseFloat(sr.distanceKm) * 1000 : undefined;
+        const segKm = sr.distanceKm ? parseFloat(sr.distanceKm) : undefined;
         const durS = sr.timeMMSS ? mmssToSeconds(sr.timeMMSS) : undefined;
-        const pace = distM && durS ? pacePerKm(distM, durS) : undefined;
-        return { segmentId: sr.segmentId, order: sr.order, distance: distM, duration: durS, pace };
+        const pace = segKm && durS ? pacePerKm(segKm * 1000, durS) : undefined;
+        return { segmentId: sr.segmentId, order: sr.order, distance: segKm, duration: durS, pace };
       });
 
     const payload = {
-      totalDistance: distMeters,
+      totalDistance: distKm,
       totalDuration: totalDurationSecs || undefined,
       avgPace,
       avgHeartRate: avgHr ? parseInt(avgHr) : undefined,
@@ -252,9 +253,9 @@ export function LogWorkoutForm({
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Segment Results (optional)</h2>
           {segments.map((seg, idx) => {
             const sr = segResults[idx]!;
-            const distM = sr.distanceKm ? parseFloat(sr.distanceKm) * 1000 : 0;
+            const segKm = sr.distanceKm ? parseFloat(sr.distanceKm) : 0;
             const durS = sr.timeMMSS ? mmssToSeconds(sr.timeMMSS) : 0;
-            const actualPace = distM && durS ? pacePerKm(distM, durS) : null;
+            const actualPace = segKm && durS ? pacePerKm(segKm * 1000, durS) : null;
 
             return (
               <div key={seg.id} className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3">
