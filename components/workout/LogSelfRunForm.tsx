@@ -222,7 +222,7 @@ export function LogSelfRunForm() {
       {/* Distance + Duration */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5 space-y-4">
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Performance</h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
               Distance (km)
@@ -239,7 +239,7 @@ export function LogSelfRunForm() {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
-              Duration (mm:ss or h:mm:ss)
+              Duration <span className="text-gray-400 font-normal">(mm:ss or h:mm:ss)</span>
             </label>
             <input
               type="text"
@@ -260,7 +260,7 @@ export function LogSelfRunForm() {
         )}
 
         {/* Heart rate */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
               Avg heart rate (bpm)
