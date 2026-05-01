@@ -226,7 +226,7 @@ export default async function DashboardPage() {
     },
     {
       label: "Total km (all time)",
-      value: (totalKmAllTime / 1000).toFixed(1) + " km",
+      value: totalKmAllTime.toFixed(1) + " km",
     },
   ];
 
