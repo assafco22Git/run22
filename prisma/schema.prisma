@@ -119,10 +119,10 @@ model Workout {
   scheduledAt DateTime
   status      String   @default("PENDING")
 
-  trainerId String
+  trainerId String?   // null for self-logged runs
   traineeId String
 
-  trainer  TrainerProfile   @relation(fields: [trainerId], references: [id])
+  trainer  TrainerProfile?  @relation(fields: [trainerId], references: [id])
   trainee  TraineeProfile   @relation(fields: [traineeId], references: [id])
   segments WorkoutSegment[]
   result   WorkoutResult?

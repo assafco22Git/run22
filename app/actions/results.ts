@@ -212,11 +212,13 @@ export async function logWorkoutResult(
       select: { title: true, trainerId: true },
     });
 
-    // Notify the trainer
-    const trainerUser = await prisma.trainerProfile.findUnique({
-      where: { id: completedWorkout.trainerId },
-      select: { userId: true },
-    });
+    // Notify the trainer (self-logged runs have no trainerId — skip)
+    const trainerUser = completedWorkout.trainerId
+      ? await prisma.trainerProfile.findUnique({
+          where: { id: completedWorkout.trainerId },
+          select: { userId: true },
+        })
+      : null;
     if (trainerUser) {
       const traineeName = session.user.name ?? "Your trainee";
       await createNotification({

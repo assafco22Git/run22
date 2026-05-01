@@ -10,6 +10,7 @@ import {
   LogOut,
   BarChart3,
   ClipboardList,
+  Plus,
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 const navItems = [
   { label: "Calendar",    href: "/calendar",     icon: CalendarDays  },
   { label: "Dashboard",   href: "/dashboard",    icon: LayoutDashboard },
+  { label: "Log a Run",   href: "/runs/log",     icon: Plus          },
   { label: "Races",       href: "/races",        icon: Trophy        },
   { label: "My Plan",     href: "/plan",         icon: ClipboardList },
   { label: "Leaderboard", href: "/leaderboard",  icon: BarChart3     },
